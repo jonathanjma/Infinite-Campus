@@ -1,0 +1,22 @@
+{
+  "manifest_version": 2,
+  "name": "Infinite Campus",
+  "description": "moment",
+  "version": "1.0",
+  "browser_action": {
+    "default_popup": "popup/popup.html"
+  },
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "permissions": [
+    "storage",
+    "webRequest",
+    "webRequestBlocking",
+    "<all_urls>"
+  ],
+  "web_accessible_resources": [
+    "pages/main.html",
+    "pages/class.html"
+  ]
+}
