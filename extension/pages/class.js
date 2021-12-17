@@ -1,12 +1,15 @@
 /*
-https://fremontunifiedca.infinitecampus.org/campus/resources/portal/grades/detail/71480
-https://fremontunifiedca.infinitecampus.org/campus/resources/portal/grades/detail/<section_id>
+things to do:
+manifest v3? (might mess up cors blocking)
+grade breaks if all assignments in cat deleted
+test edge cases involving initially ungraded assignments
  */
 
 // let coursesBase = 'https://fremontunifiedca.infinitecampus.org/campus/resources/portal/grades/detail/'
-// let courseID = window.location.search.match('id=(.*?)$')[1]
-// coursesBase += courseID
-let coursesBase = '../../test_data/mband.json'
+// let regex_result = window.location.search.match('id=(.*?)&n=(.*?)$')
+// coursesBase += regex_result[1]
+// document.getElementById('title').innerHTML = regex_result[2].split('%20').join(' ')
+let coursesBase = '../../test_data/calc.json'
 
 let categoriesMap = {}
 let summaryTable = document.getElementById('summary')
@@ -44,8 +47,9 @@ fetch(coursesBase).then(r => r.json()).then(json => {
                     'ID': _assignment['objectSectionID'],
                     'Name': _assignment['assignmentName'],
                     'Due Date': _assignment['dueDate'],
-                    'Score': !notGraded ? parseFloat(_assignment['scorePoints']) : '-',
+                    'Score': !notGraded ? parseFloat(_assignment['scorePoints']) : 0,
                     'Total': _assignment['totalPoints'],
+                    'Include': !notGraded,
                     'Comments': _assignment['comments'],
                     'Multiplier': _assignment['multiplier'],
                 }
@@ -85,7 +89,7 @@ fetch(coursesBase).then(r => r.json()).then(json => {
 
     for (let catName in categoriesMap) {
         let category = categoriesMap[catName]
-        // unpublished assignments
+        // account for unpublished assignments
         if (category['Score'] !== progressObj[catName][0] && category['Total'] !== progressObj[catName][1]) {
             let unpubScore = progressObj[catName][0] - category['Score']
             let unpubTotal = progressObj[catName][1] - category['Total']
@@ -95,6 +99,7 @@ fetch(coursesBase).then(r => r.json()).then(json => {
                 'Due Date': Date.now(),
                 'Score': unpubScore,
                 'Total': unpubTotal,
+                'Include': true,
                 'Comments': null,
                 'Multiplier': 1,
             }
@@ -116,17 +121,31 @@ fetch(coursesBase).then(r => r.json()).then(json => {
             assignmentRow.insertCell(-1).innerHTML = assignment['Name']
             assignmentRow.appendChild(createAssignInput(assignment['ID'], catName, 'Score', assignment['Score']))
             assignmentRow.appendChild(createAssignInput(assignment['ID'], catName, 'Total', assignment['Total']))
-            assignmentRow.insertCell(-1).innerHTML = (assignment['Score'] !== '-' ?
+            assignmentRow.insertCell(-1).innerHTML = (assignment['Include'] ?
                 ((assignment['Score'] / assignment['Total']) * 100).toFixed(2) : '-')
                 + '%'
+            let deleteButton = document.createElement('button')
+            deleteButton.innerHTML = 'Delete'
+            deleteButton.onclick = () => {
+                deleteAssignment(assignment['ID'], catName)
+            }
+            assignmentRow.appendChild(deleteButton)
         }
         document.body.append(catTable)
+
+        let addButton = document.createElement('button')
+        addButton.innerHTML = '+ Add'
+        addButton.onclick = () => {
+            addAssignment(catName)
+        }
+        document.body.append(document.createElement('br'))
+        document.body.append(addButton)
 
         let catSumRow = summaryTable.insertRow(-1)
         catSumRow.id = catName
         catSumRow.insertCell(0).innerHTML = catName
-        catSumRow.insertCell(1).innerHTML = category['Score']
-        catSumRow.insertCell(2).innerHTML = category['Total']
+        catSumRow.insertCell(1).innerHTML = category['Score'].toFixed(2)
+        catSumRow.insertCell(2).innerHTML = category['Total'].toFixed(2)
         catSumRow.insertCell(3).innerHTML =
             ((category['Score'] / category['Total']) * 100).toFixed(2) + '%'
 
@@ -154,14 +173,20 @@ fetch(coursesBase).then(r => r.json()).then(json => {
 }).catch(error => {
     console.log(error);
     console.log('sign in at https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp')
+
+    document.getElementById('error').hidden = false
+    document.getElementById('login').onclick = () => {
+        window.open('https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp', '_blank');
+    }
 })
 
 function refreshCategory(categoryName) {
     // update category grade
     let category = categoriesMap[categoryName]
+    console.log(category)
     let catRow = document.getElementById(categoryName)
-    catRow.children.item(1).innerHTML = category['Score']
-    catRow.children.item(2).innerHTML = category['Total']
+    catRow.children.item(1).innerHTML = category['Score'].toFixed(2)
+    catRow.children.item(2).innerHTML = category['Total'].toFixed(2)
     catRow.children.item(3).innerHTML =
         ((category['Score'] / category['Total']) * 100).toFixed(2) + '%'
 
@@ -201,7 +226,15 @@ function updateAssignment(id, catTitle, fieldName, newVal) {
     let assignRow = document.getElementById(id)
     for (let assign of categoriesMap[catTitle]['Assignments']) {
         if (assign['ID'] === id) {
-            categoriesMap[catTitle][fieldName] += newVal - assign[fieldName]
+            // deal with ungraded assignments
+            if (!assign['Include']) {
+                categoriesMap[catTitle][fieldName] += newVal
+                let field2 = fieldName === 'Score' ? 'Total' : 'Score'
+                categoriesMap[catTitle][field2] += assign[field2] * assign['Multiplier']
+                assign['Include'] = true
+            } else {
+                categoriesMap[catTitle][fieldName] += (newVal - assign[fieldName]) * assign['Multiplier']
+            }
             assign[fieldName] = newVal
             assignRow.children.item(fieldName === 'Score' ? 1 : 2).value = newVal
             assignRow.children.item(3).innerHTML =
@@ -210,3 +243,56 @@ function updateAssignment(id, catTitle, fieldName, newVal) {
     }
     refreshCategory(catTitle)
 }
+
+function addAssignment(catTitle) {
+    let data = {
+        'ID': id_counter,
+        'Name': 'New Assignment',
+        'Due Date': Date.now(),
+        'Score': 0,
+        'Total': 0,
+        'Include': true,
+        'Comments': null,
+        'Multiplier': 1,
+    }
+    id_counter++
+    categoriesMap[catTitle]['Assignments'].push(data)
+    categoriesMap[catTitle]['Score'] += data['Score']
+    categoriesMap[catTitle]['Total'] += data['Total']
+
+    let catTable = document.getElementById(catTitle + '_T')
+    let assignmentRow = catTable.insertRow(-1)
+    assignmentRow.id = data['ID']
+    assignmentRow.insertCell(-1).innerHTML = data['Name']
+    assignmentRow.appendChild(createAssignInput(data['ID'], catTitle, 'Score', data['Score']))
+    assignmentRow.appendChild(createAssignInput(data['ID'], catTitle, 'Total', data['Total']))
+    assignmentRow.insertCell(-1).innerHTML =
+        ((data['Score'] / data['Total']) * 100).toFixed(2) + '%'
+    let deleteButton = document.createElement('button')
+    deleteButton.innerHTML = 'Delete'
+    deleteButton.onclick = () => {
+        deleteAssignment(data['ID'], catTitle)
+    }
+    assignmentRow.appendChild(deleteButton)
+    refreshCategory(catTitle)
+}
+
+function deleteAssignment(id, catTitle) {
+    let i = 0;
+    for (let assign of categoriesMap[catTitle]['Assignments']) {
+        if (assign['ID'] === id) {
+            categoriesMap[catTitle]['Score'] -= assign['Score'] * assign['Multiplier']
+            categoriesMap[catTitle]['Total'] -= assign['Total'] * assign['Multiplier']
+            categoriesMap[catTitle]['Assignments'].remove(i)
+        }
+        i++
+    }
+    document.getElementById(id).remove()
+    refreshCategory(catTitle)
+}
+
+Array.prototype.remove = function(from, to) {
+    let rest = this.slice((to || from) + 1 || this.length);
+    this.length = from < 0 ? this.length + from : from;
+    return this.push.apply(this, rest);
+};

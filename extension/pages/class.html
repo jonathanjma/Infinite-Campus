@@ -7,14 +7,20 @@
 <!--    <link rel="shortcut icon" href="icon.png">-->
     <style>
         th, td {
-            padding: 7px 12px;
+            padding: 10px 12px;
         }
     </style>
 </head>
 <body>
-    <h1>moment 2</h1>
+    <h1 id="title">moment 2</h1>
 
     <table id="summary"></table>
+
+    <div id="error" hidden>
+        <p>Error: you are not logged into Infinite Campus</p>
+        <button id="login">Log in here</button>
+        <p>After logging in, refresh this page</p>
+    </div>
 
     <script src="class.js"></script>
 </body>
