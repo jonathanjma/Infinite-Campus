@@ -1,15 +1,24 @@
 /*
 things to do:
 test edge cases involving initially ungraded assignments
+rename new assignments
+reset updated assignments
+back to home page button
+see current grades on home page
  */
 
-let coursesBase = 'https://fremontunifiedca.infinitecampus.org/campus/resources/portal/grades/detail/'
-let regex_result = window.location.search.match('id=(.*?)&n=(.*?)$')
-coursesBase += regex_result[1]
-let className = regex_result[2].split('%20').join(' ')
-document.getElementById('title').innerHTML = className
-document.title = className
-// let coursesBase = '../../test_data/calc.json'
+let production = true
+let coursesBase
+if (production) {
+    coursesBase = 'https://fremontunifiedca.infinitecampus.org/campus/resources/portal/grades/detail/'
+    let regex_result = window.location.search.match('id=(.*?)&n=(.*?)$')
+    coursesBase += regex_result[1]
+    let className = regex_result[2].split('%20').join(' ')
+    document.getElementById('title').innerHTML = className
+    document.title = className
+} else {
+    coursesBase = '../../test_data/moo_yang.json'
+}
 
 let categoriesMap = {}
 let summaryTable = document.getElementById('summary')
@@ -37,6 +46,7 @@ fetch(coursesBase).then(r => r.json()).then(json => {
     let progressObj = {}
     for (let _categoryObj of _categoryObjects) {
         for (let _category of _categoryObj) {
+            console.log(_category)
 
             // build assignment list for category
             let catAssignmentsData = []
@@ -82,7 +92,11 @@ fetch(coursesBase).then(r => r.json()).then(json => {
             }
 
             // keep track of IC reported category totals to determine if there are unpublished assignments
-            progressObj[catName] = [_category['progress']['progressPointsEarned'], _category['progress']['progressTotalPoints']]
+            if (_category['progress'] !== null) {
+                progressObj[catName] = [_category['progress']['progressPointsEarned'], _category['progress']['progressTotalPoints']]
+            } else { // if categories have assignments, but they are all ungraded
+                progressObj[catName] = [categoriesMap[catName]['Score'], categoriesMap[catName]['Total']]
+            }
         }
     }
     console.log(categoriesMap)
