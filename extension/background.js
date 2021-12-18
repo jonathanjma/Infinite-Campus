@@ -1,4 +1,5 @@
-// From: https://github.com/balvin-perrie/Access-Control-Allow-Origin---Unblock
+// CORS Header bypass code from
+// https://github.com/balvin-perrie/Access-Control-Allow-Origin---Unblock
 
 const DEFAULT_METHODS = ['GET', 'PUT', 'POST', 'DELETE', 'HEAD', 'OPTIONS', 'PATCH']
 const prefs = {
@@ -129,9 +130,6 @@ cors.onHeadersReceived = d => {
             responseHeaders.splice(i, 1);
         }
     }
-    // don't work when on extension page? will need to test in future to make sure only extension evades cors
-    // console.log("code")
-    // console.log(d.url)
     return {responseHeaders};
 };
 cors.install = () => {
