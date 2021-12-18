@@ -1,20 +1,13 @@
-// CORS Header bypass code from
+// CORS Header bypass code courtesy of:
 // https://github.com/balvin-perrie/Access-Control-Allow-Origin---Unblock
 
 const DEFAULT_METHODS = ['GET', 'PUT', 'POST', 'DELETE', 'HEAD', 'OPTIONS', 'PATCH']
 const prefs = {
-    'enabled': false,
     'overwrite-origin': true,
     'methods': DEFAULT_METHODS,
-    'remove-x-frame': true,
-    'allow-credentials': true,
-    'allow-headers-value': '*',
     'allow-origin-value': '*',
-    'expose-headers-value': '*',
-    'allow-headers': false,
-    'unblock-initiator': true
 };
-const active_urls = [chrome.extension.getURL('')+'*']
+const active_urls = [chrome.extension.getURL('')+'*'] // only block cors headers on extension pages
 
 const redirects = {};
 chrome.tabs.onRemoved.addListener(tabId => delete redirects[tabId]);
@@ -33,21 +26,6 @@ cors.onHeadersReceived = d => {
         return;
     }
     const {initiator, originUrl, responseHeaders, requestId, tabId} = d;
-    let origin = '';
-
-    const redirect = redirects[tabId] ? redirects[tabId][requestId] : false;
-    if (prefs['unblock-initiator'] && redirect !== true) {
-        try {
-            const o = new URL(initiator || originUrl);
-            origin = o.origin;
-        }
-        catch (e) {
-            console.warn('cannot extract origin for initiator', initiator);
-        }
-    }
-    else {
-        origin = '*';
-    }
     if (redirects[tabId]) {
         delete redirects[tabId][requestId];
     }
@@ -57,13 +35,13 @@ cors.onHeadersReceived = d => {
 
         if (o) {
             if (o.value !== '*') {
-                o.value = origin || prefs['allow-origin-value'];
+                o.value = prefs['allow-origin-value'];
             }
         }
         else {
             responseHeaders.push({
                 'name': 'Access-Control-Allow-Origin',
-                'value': origin || prefs['allow-origin-value']
+                'value': prefs['allow-origin-value']
             });
         }
     }
@@ -82,62 +60,11 @@ cors.onHeadersReceived = d => {
             });
         }
     }
-    // The value of the 'Access-Control-Allow-Origin' header in the response must not be the wildcard '*'
-    // when the request's credentials mode is 'include'.
-    if (prefs['allow-credentials'] === true) {
-        const o = responseHeaders.find(({name}) => name.toLowerCase() === 'access-control-allow-origin');
-        if (!o || o.value !== '*') {
-            const o = responseHeaders.find(({name}) => name.toLowerCase() === 'access-control-allow-credentials');
-            if (o) {
-                o.value = 'true';
-            }
-            else {
-                responseHeaders.push({
-                    'name': 'Access-Control-Allow-Credentials',
-                    'value': 'true'
-                });
-            }
-        }
-    }
-    // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Headers
-    if (prefs['allow-headers'] === true) {
-        const o = responseHeaders.find(({name}) => name.toLowerCase() === 'access-control-allow-headers');
-        if (o) {
-            o.value = prefs['allow-headers-value'];
-        }
-        else {
-            responseHeaders.push({
-                'name': 'Access-Control-Allow-Headers',
-                'value': prefs['allow-headers-value']
-            });
-        }
-    }
-    if (prefs['allow-headers'] === true) {
-        const o = responseHeaders.find(({name}) => name.toLowerCase() === 'access-control-expose-headers');
-        if (o) {
-            o.value = prefs['expose-headers-value'];
-        }
-        else {
-            responseHeaders.push({
-                'name': 'Access-Control-Expose-Headers',
-                'value': prefs['expose-headers-value']
-            });
-        }
-    }
-    if (prefs['remove-x-frame'] === true) {
-        const i = responseHeaders.findIndex(({name}) => name.toLowerCase() === 'x-frame-options');
-        if (i !== -1) {
-            responseHeaders.splice(i, 1);
-        }
-    }
     return {responseHeaders};
 };
 cors.install = () => {
     cors.remove();
-    const extra = ['blocking', 'responseHeaders'];
-    if (/Firefox/.test(navigator.userAgent) === false) {
-        extra.push('extraHeaders');
-    }
+    const extra = ['blocking', 'responseHeaders', 'extraHeaders'];
     chrome.webRequest.onHeadersReceived.addListener(cors.onHeadersReceived, {
         urls: active_urls
     }, extra);
