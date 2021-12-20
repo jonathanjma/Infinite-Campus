@@ -5,6 +5,9 @@ rename new assignments
 reset updated assignments
 back to home page button
 see current grades on home page
+% diff from original grade
+
+note: 1024 x 640 for web store screenshots
  */
 
 let production = true

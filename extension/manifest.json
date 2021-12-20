@@ -1,6 +1,6 @@
 {
   "manifest_version": 2,
-  "name": "Infinite Campus",
+  "name": "Infinite Campus Grades++",
   "description": "Alternative Version of FUSD Infinite Campus (with grade simulation)",
   "version": "1.0",
   "browser_action": {
@@ -19,7 +19,7 @@
   "permissions": [
     "webRequest",
     "webRequestBlocking",
-    "<all_urls>"
+    "*://*/pages/*"
   ],
   "web_accessible_resources": [
     "pages/main.html",
