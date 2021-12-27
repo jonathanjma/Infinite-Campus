@@ -1,3 +1,4 @@
 .idea/
 *.iml
 test_data/
+*.zip
