@@ -15,7 +15,20 @@ fetch(main).then(r => r.json()).then(json => {
         let row = table.insertRow(-1)
         row.insertCell(0).innerHTML = courseName
         row.insertCell(1).innerHTML = course['teacherDisplay']
-        row.insertCell(2).innerHTML =
+
+        // show current grade
+        let grades = course['gradingTasks']
+        for (let grade of grades) {
+            if (grade['taskName'] === 'Semester Final') {
+                row.insertCell(2).innerHTML =
+                    (grade['progressPercent'] !== undefined ? grade['progressPercent'] : '-') + '%'
+                row.insertCell(3).innerHTML =
+                    grade['progressScore'] !== undefined ? grade['progressScore'] : '-'
+                break
+            }
+        }
+
+        row.insertCell(4).innerHTML =
             "<a href='class.html?id=" + courseId + "&n=" + courseName + "'>Open Class</a>"
     }
 

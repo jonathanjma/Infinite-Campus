@@ -1,11 +1,13 @@
 /*
 things to do:
-test edge cases involving initially ungraded assignments
 rename new assignments
 reset updated assignments
 back to home page button
-see current grades on home page
-% diff from original grade
+grade over time graph (unpublished assignments might be sus)
+grading period detection
+switch between grading periods
+
+improve ui (change font/colors/padding)
 
 note: 1024 x 640 for web store screenshots
  */
@@ -14,18 +16,20 @@ let production = true
 let coursesBase
 if (production) {
     coursesBase = 'https://fremontunifiedca.infinitecampus.org/campus/resources/portal/grades/detail/'
-    let regex_result = window.location.search.match('id=(.*?)&n=(.*?)$')
+    let regex_result = window.location.search.match('id=(.*?)&n=(.*?)$') // get class id + name from url
     coursesBase += regex_result[1]
     let className = regex_result[2].split('%20').join(' ')
     document.getElementById('title').innerHTML = className
     document.title = className
 } else {
-    coursesBase = '../../test_data/moo_yang.json'
+    coursesBase = '../../test_data/band.json'
 }
 
 let categoriesMap = {}
 let summaryTable = document.getElementById('summary')
-let id_counter = 1;
+let id_counter = 1
+
+let gradeOriginalNumer = 0, gradeOriginalDenom = 0 // for % grade difference
 
 fetch(coursesBase).then(r => r.json()).then(json => {
 
@@ -85,6 +89,8 @@ fetch(coursesBase).then(r => r.json()).then(json => {
                 categoriesMap[catName] = {
                     'Score': scorePts,
                     'Total': totalPts,
+                    'Original Score': scorePts,
+                    'Original Total': totalPts,
                     'Weight': _category['weight'] * 0.01,
                     'Assignments': catAssignmentsData,
                 }
@@ -92,6 +98,8 @@ fetch(coursesBase).then(r => r.json()).then(json => {
                 categoriesMap[catName]['Assignments'] = categoriesMap[catName]['Assignments'].concat(catAssignmentsData)
                 categoriesMap[catName]['Score'] += scorePts
                 categoriesMap[catName]['Total'] += totalPts
+                categoriesMap[catName]['Original Score'] += scorePts
+                categoriesMap[catName]['Original Total'] += totalPts
             }
 
             // keep track of IC reported category totals to determine if there are unpublished assignments
@@ -132,28 +140,16 @@ fetch(coursesBase).then(r => r.json()).then(json => {
             id_counter++
         }
 
-        // create category specific html elements: heading, assignment table, add + delete assignment button
+        // create category specific html elements: heading, assignment rows + table, add assignment button
         let catHeading = document.createElement('h2')
         catHeading.innerHTML = catName
         document.body.append(catHeading)
 
         let catTable = document.createElement('table')
         catTable.id = catName + '_T' // category name_T = if of category table
+        catTable.style.paddingLeft = '10px'
         for (let assignment of category['Assignments']) {
-            let assignmentRow = catTable.insertRow(-1)
-            assignmentRow.id = assignment['ID'] // assignment id = id of assignment row
-            assignmentRow.insertCell(-1).innerHTML = assignment['Name']
-            assignmentRow.appendChild(createAssignInput(assignment['ID'], catName, 'Score', assignment['Score']))
-            assignmentRow.appendChild(createAssignInput(assignment['ID'], catName, 'Total', assignment['Total']))
-            assignmentRow.insertCell(-1).innerHTML = (assignment['Include'] ?
-                ((assignment['Score'] / assignment['Total']) * 100).toFixed(2) : '-')
-                + '%' // only calculate grade if assignment graded
-            let deleteButton = document.createElement('button')
-            deleteButton.innerHTML = 'Delete'
-            deleteButton.onclick = () => {
-                deleteAssignment(assignment['ID'], catName)
-            }
-            assignmentRow.appendChild(deleteButton)
+            createAssignmentRow(assignment, catTable, catName)
         }
         document.body.append(catTable)
 
@@ -166,17 +162,8 @@ fetch(coursesBase).then(r => r.json()).then(json => {
         document.body.append(addButton)
         /////
 
-        // overall category stats at top of page
-        let catSumRow = summaryTable.insertRow(-1)
-        catSumRow.id = catName // category name = id of overall stat row
-        catSumRow.insertCell(0).innerHTML = catName
-        catSumRow.insertCell(1).innerHTML = category['Score'].toFixed(2)
-        catSumRow.insertCell(2).innerHTML = category['Total'].toFixed(2)
-        catSumRow.insertCell(3).innerHTML =
-            ((category['Score'] / category['Total']) * 100).toFixed(2) + '%'
-
         // Build final grade using category point totals
-        weightTotal += category['Weight']
+        weightTotal += category['Weight'] // needed if categories have no assignments
         pointsBased = category['Weight'] === 0
         if (!pointsBased) { // regular grade with weighed categories
             runningTotal += (category['Score'] / category['Total']) * category['Weight']
@@ -184,7 +171,18 @@ fetch(coursesBase).then(r => r.json()).then(json => {
             runningScore += category['Score']
             runningTotal += category['Total']
         }
-        category['Points_Based'] = pointsBased
+        category['Points Based'] = pointsBased
+
+        // overall category stats at top of page
+        let catSumRow = summaryTable.insertRow(-1)
+        catSumRow.id = catName // category name = id of overall stat row
+        catSumRow.insertCell(0).innerHTML = catName
+        catSumRow.insertCell(1).innerHTML = (!pointsBased ? category['Weight']*100 : '-') + '%'
+        catSumRow.insertCell(2).innerHTML = category['Score'].toFixed(2)
+        catSumRow.insertCell(3).innerHTML = category['Total'].toFixed(2)
+        catSumRow.insertCell(4).innerHTML =
+            ((category['Score'] / category['Total']) * 100).toFixed(2) + '%'
+        catSumRow.insertCell(5).innerHTML = '0.00%'
     }
 
     // output final grade
@@ -193,9 +191,12 @@ fetch(coursesBase).then(r => r.json()).then(json => {
     gradeSumRow.insertCell(0).innerHTML = 'Current Grade'
     gradeSumRow.insertCell(1).innerHTML = ''
     gradeSumRow.insertCell(2).innerHTML = ''
-    gradeSumRow.insertCell(3).innerHTML = ((!pointsBased ?
-            (runningTotal / weightTotal) : (runningScore / runningTotal))
-        * 100).toFixed(2) + '%'
+    gradeSumRow.insertCell(3).innerHTML = ''
+    gradeOriginalNumer = !pointsBased ? runningTotal : runningScore
+    gradeOriginalDenom = !pointsBased ? weightTotal : runningTotal
+    gradeSumRow.insertCell(4).innerHTML =
+        ((gradeOriginalNumer / gradeOriginalDenom) * 100).toFixed(2) + '%'
+    gradeSumRow.insertCell(5).innerHTML = '0.00%'
 
 }).catch(error => {
     // show error message if user is not logged in to IC
@@ -209,21 +210,24 @@ fetch(coursesBase).then(r => r.json()).then(json => {
 })
 
 function refreshCategory(categoryName) {
-    // recalculate category grade
+    // recalculate category summary
     let category = categoriesMap[categoryName]
     console.log(categoriesMap)
     let catRow = document.getElementById(categoryName)
-    catRow.children.item(1).innerHTML = category['Score'].toFixed(2)
-    catRow.children.item(2).innerHTML = category['Total'].toFixed(2)
-    catRow.children.item(3).innerHTML =
+    catRow.children.item(2).innerHTML = category['Score'].toFixed(2)
+    catRow.children.item(3).innerHTML = category['Total'].toFixed(2)
+    catRow.children.item(4).innerHTML =
         ((category['Score'] / category['Total']) * 100).toFixed(2) + '%'
+    catRow.children.item(5).innerHTML =
+        ((category['Score'] / category['Total'] - category['Original Score'] / category['Original Total']) * 100)
+            .toFixed(2) + '%'
 
     // recalculate current grade
     let runningScore = 0, runningTotal = 0
     let weightTotal = 0
     for (let catName in categoriesMap) {
         category = categoriesMap[catName]
-        if (!category['Points_Based']) {
+        if (!category['Points Based']) {
             if (category['Score'] !== 0 && category['Total'] !== 0) {
                 runningTotal += (category['Score'] / category['Total']) * category['Weight']
                 weightTotal += category['Weight']
@@ -234,13 +238,17 @@ function refreshCategory(categoryName) {
         }
     }
     let gradeSumRow = document.getElementById('current_grade')
-    gradeSumRow.children.item(3).innerHTML = ((!category['Points_Based'] ?
-            (runningTotal / weightTotal) : (runningScore / runningTotal))
-        * 100).toFixed(2) + '%'
+    let gradeNumer = !category['Points Based'] ? runningTotal : runningScore
+    let gradeDenom = !category['Points Based'] ? weightTotal : runningTotal
+    gradeSumRow.children.item(4).innerHTML =
+        ((gradeNumer / gradeDenom) * 100).toFixed(2) + '%'
+    gradeSumRow.children.item(5).innerHTML =
+        ((gradeNumer / gradeDenom - gradeOriginalNumer / gradeOriginalDenom) * 100)
+            .toFixed(2) + '%'
 }
 
 // create assignment grade inputs
-function createAssignInput(id, catTitle, fieldName, initValue) {
+function createAssignmentInput(id, catTitle, fieldName, initValue) {
     let input = document.createElement('input')
     input.value = initValue
     input.type = 'number'
@@ -265,13 +273,13 @@ function updateAssignment(id, catTitle, fieldName, newVal) {
                 let field2 = fieldName === 'Score' ? 'Total' : 'Score'
                 categoriesMap[catTitle][field2] += assign[field2] * assign['Multiplier']
                 assign['Include'] = true
-            } else { // otherwise only the delta of the changed score/total is needed
+            } else { // otherwise, only the delta of the changed score/total is needed
                 categoriesMap[catTitle][fieldName] += (newVal - assign[fieldName]) * assign['Multiplier']
             }
             assign[fieldName] = newVal
             // update row with new grade
-            assignRow.children.item(fieldName === 'Score' ? 1 : 2).value = newVal
-            assignRow.children.item(3).innerHTML =
+            assignRow.children.item(fieldName === 'Score' ? 2 : 3).value = newVal
+            assignRow.children.item(4).innerHTML =
                 ((assign['Score'] / assign['Total']) * 100).toFixed(2) + '%'
         }
     }
@@ -298,20 +306,34 @@ function addAssignment(catTitle) {
 
     // create new assignment row
     let catTable = document.getElementById(catTitle + '_T')
-    let assignmentRow = catTable.insertRow(-1)
-    assignmentRow.id = data['ID']
-    assignmentRow.insertCell(-1).innerHTML = data['Name']
-    assignmentRow.appendChild(createAssignInput(data['ID'], catTitle, 'Score', data['Score']))
-    assignmentRow.appendChild(createAssignInput(data['ID'], catTitle, 'Total', data['Total']))
-    assignmentRow.insertCell(-1).innerHTML =
-        ((data['Score'] / data['Total']) * 100).toFixed(2) + '%'
+    createAssignmentRow(data, catTable, catTitle)
+    refreshCategory(catTitle)
+}
+
+// create html row for each assignment
+function createAssignmentRow(assignmentData, categoryTable, categoryName) {
+    let assignmentRow = categoryTable.insertRow(-1)
+    assignmentRow.id = assignmentData['ID'] // assignment id = id of assignment row
+
     let deleteButton = document.createElement('button')
-    deleteButton.innerHTML = 'Delete'
+    deleteButton.innerHTML = 'X'
     deleteButton.onclick = () => {
-        deleteAssignment(data['ID'], catTitle)
+        deleteAssignment(assignmentData['ID'], categoryName)
     }
     assignmentRow.appendChild(deleteButton)
-    refreshCategory(catTitle)
+
+    assignmentRow.insertCell(-1).innerHTML = assignmentData['Name']
+    assignmentRow.appendChild(createAssignmentInput(assignmentData['ID'], categoryName, 'Score', assignmentData['Score']))
+    assignmentRow.appendChild(createAssignmentInput(assignmentData['ID'], categoryName, 'Total', assignmentData['Total']))
+    assignmentRow.insertCell(-1).innerHTML = (assignmentData['Include'] ?
+            ((assignmentData['Score'] / assignmentData['Total']) * 100).toFixed(2) : '-')
+        + '%' // only calculate grade if assignment graded
+
+    let moreInfo = ''
+    moreInfo += assignmentData['Comments'] !== null ? (assignmentData['Comments']) : ''
+    moreInfo += (assignmentData['Comments'] !== null && assignmentData['Multiplier'] !== 1) ? ', ' : ''
+    moreInfo += assignmentData['Multiplier'] !== 1 ? ('Point Multiplier: ' + assignmentData['Multiplier']) : ''
+    assignmentRow.insertCell(-1).innerHTML = moreInfo
 }
 
 // delete assignment
