@@ -10,17 +10,31 @@
         }
     </style>
 </head>
-<body>
+<body style="padding-left: 15px">
     <h1>Infinite Campus Grades++</h1>
 
-    <table id="courses">
-        <tr style="text-align: left">
-            <th>Class</th>
-            <th>Teacher</th>
-            <th>% Grade</th>
-            <th>Letter</th>
-            <th>Open Link</th>
-        </tr>
+    <div id="semChoose">
+        <p>Choose a semester:</p>
+        <label class="radio-inline">
+            <input type="radio" id="sem1" name="sem">Semester 1
+        </label>
+        <label class="radio-inline">
+            <input type="radio" id="sem2" name="sem">Semester 2
+        </label>
+        <br><br>
+    </div>
+
+    <table id="courses_T">
+        <thead>
+            <tr style="text-align: left">
+                <th>Class</th>
+                <th>Teacher</th>
+                <th>% Grade</th>
+                <th>Letter</th>
+                <th>Open Link</th>
+            </tr>
+        </thead>
+        <tbody id="courses"></tbody>
     </table>
 
     <div id="error" hidden>

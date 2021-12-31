@@ -3,10 +3,7 @@ things to do:
 rename new assignments
 reset updated assignments
 back to home page button
-grade over time graph (unpublished assignments might be sus)
-grading period detection
-switch between grading periods
-
+grade over time graph (unpublished assignments might be sus: solid line pub, dotted unpub?)
 improve ui (change font/colors/padding)
 
 note: 1024 x 640 for web store screenshots
@@ -14,20 +11,24 @@ note: 1024 x 640 for web store screenshots
 
 let production = true
 let coursesBase
+
+let gpSelected = 1 // default semester (will be overwritten by url parameter if it exists)
+
 if (production) {
     coursesBase = 'https://fremontunifiedca.infinitecampus.org/campus/resources/portal/grades/detail/'
-    let regex_result = window.location.search.match('id=(.*?)&n=(.*?)$') // get class id + name from url
+    let regex_result = window.location.search.match('id=(.*?)&n=(.*?)&gp=(.*?)$') // get class id + name + semester from url
     coursesBase += regex_result[1]
     let className = regex_result[2].split('%20').join(' ')
     document.getElementById('title').innerHTML = className
     document.title = className
+    gpSelected = parseInt(regex_result[3])
 } else {
     coursesBase = '../../test_data/band.json'
 }
 
 let categoriesMap = {}
-let summaryTable = document.getElementById('summary')
-let id_counter = 1
+let summaryTable = document.getElementById('summary') // grade/category summary table
+let id_counter = 1 // to ensure all assignments have unique html element ids
 
 let gradeOriginalNumer = 0, gradeOriginalDenom = 0 // for % grade difference
 
@@ -35,18 +36,29 @@ fetch(coursesBase).then(r => r.json()).then(json => {
 
     // get all category json objects from infinite campus json
     let _classData = json['details']
-    let _gradeObjects = []
     let _categoryObjects = []
 
+    let quarterCount = 0
     for (let _dataEntry of _classData) {
-        if (_dataEntry['task']['taskName'] === 'Semester Final') {
-            _gradeObjects.push(_dataEntry['task'])
-        }
         if (_dataEntry['categories'].length > 0) {
             _categoryObjects.push(_dataEntry['categories'])
         }
+        // use 'quarter grade' since only quarter entries contain assignments
+        if (_dataEntry['task']['taskName'] === 'Quarter Grade') {
+            quarterCount++
+            // exit when quarter count equals desired semester (*2 to convert to quarters)
+            if (quarterCount === gpSelected*2) {
+                break
+            }
+            // if desired semester not reached and quarter count is even:
+                // reset assignments
+            // if desired semester not reached and quarter count is odd:
+                // don't reset since quarter is q1 or q3, and we need those assignments
+            else if (quarterCount % 2 !== 1) {
+                _categoryObjects = []
+            }
+        }
     }
-    // console.log(_gradeObjects)
     // console.log(_categoryObjects)
 
     // build categories map from IC json with assignments, point totals, etc. for each category
@@ -147,7 +159,7 @@ fetch(coursesBase).then(r => r.json()).then(json => {
 
         let catTable = document.createElement('table')
         catTable.id = catName + '_T' // category name_T = if of category table
-        catTable.style.paddingLeft = '10px'
+        catTable.style.paddingLeft = '25px'
         for (let assignment of category['Assignments']) {
             createAssignmentRow(assignment, catTable, catName)
         }
@@ -200,12 +212,12 @@ fetch(coursesBase).then(r => r.json()).then(json => {
 
 }).catch(error => {
     // show error message if user is not logged in to IC
-    console.log(error);
+    console.log(error)
     console.log('sign in at https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp')
 
     document.getElementById('error').hidden = false
     document.getElementById('login').onclick = () => {
-        window.open('https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp', '_blank');
+        window.open('https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp', '_blank')
     }
 })
 
@@ -339,7 +351,7 @@ function createAssignmentRow(assignmentData, categoryTable, categoryName) {
 // delete assignment
 function deleteAssignment(id, catTitle) {
     // delete map entry
-    let i = 0;
+    let i = 0
     for (let assign of categoriesMap[catTitle]['Assignments']) {
         if (assign['ID'] === id) {
             if (assign['Include']) {
@@ -356,7 +368,7 @@ function deleteAssignment(id, catTitle) {
 
 // remove element from array
 Array.prototype.remove = function(from, to) {
-    let rest = this.slice((to || from) + 1 || this.length);
-    this.length = from < 0 ? this.length + from : from;
-    return this.push.apply(this, rest);
-};
+    let rest = this.slice((to || from) + 1 || this.length)
+    this.length = from < 0 ? this.length + from : from
+    return this.push.apply(this, rest)
+}
