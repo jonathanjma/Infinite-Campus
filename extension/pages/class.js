@@ -159,9 +159,9 @@ fetch(coursesBase).then(r => r.json()).then(json => {
 
         let catTable = document.createElement('table')
         catTable.id = catName + '_T' // category name_T = if of category table
-        catTable.style.paddingLeft = '25px'
+        catTable.style.paddingLeft = '20px'
         for (let assignment of category['Assignments']) {
-            createAssignmentRow(assignment, catTable, catName)
+            createAssignmentRow(assignment, catTable, catName, false)
         }
         document.body.append(catTable)
 
@@ -215,6 +215,7 @@ fetch(coursesBase).then(r => r.json()).then(json => {
     console.log(error)
     console.log('sign in at https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp')
 
+    document.getElementById('summary').remove()
     document.getElementById('error').hidden = false
     document.getElementById('login').onclick = () => {
         window.open('https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp', '_blank')
@@ -279,7 +280,7 @@ function updateAssignment(id, catTitle, fieldName, newVal) {
     let assignRow = document.getElementById(id)
     for (let assign of categoriesMap[catTitle]['Assignments']) {
         if (assign['ID'] === id) {
-            // if assignment was ungraded before we need to update both the category's score and total points
+            // if assignment was ungraded before we need to update both the category's total score and points
             if (!assign['Include']) {
                 categoriesMap[catTitle][fieldName] += newVal
                 let field2 = fieldName === 'Score' ? 'Total' : 'Score'
@@ -288,7 +289,7 @@ function updateAssignment(id, catTitle, fieldName, newVal) {
             } else { // otherwise, only the delta of the changed score/total is needed
                 categoriesMap[catTitle][fieldName] += (newVal - assign[fieldName]) * assign['Multiplier']
             }
-            assign[fieldName] = newVal
+            assign[fieldName] = newVal // update assignment grade
             // update row with new grade
             assignRow.children.item(fieldName === 'Score' ? 2 : 3).value = newVal
             assignRow.children.item(4).innerHTML =
@@ -318,12 +319,12 @@ function addAssignment(catTitle) {
 
     // create new assignment row
     let catTable = document.getElementById(catTitle + '_T')
-    createAssignmentRow(data, catTable, catTitle)
+    createAssignmentRow(data, catTable, catTitle, true)
     refreshCategory(catTitle)
 }
 
 // create html row for each assignment
-function createAssignmentRow(assignmentData, categoryTable, categoryName) {
+function createAssignmentRow(assignmentData, categoryTable, categoryName, userAdded) {
     let assignmentRow = categoryTable.insertRow(-1)
     assignmentRow.id = assignmentData['ID'] // assignment id = id of assignment row
 
@@ -334,7 +335,27 @@ function createAssignmentRow(assignmentData, categoryTable, categoryName) {
     }
     assignmentRow.appendChild(deleteButton)
 
-    assignmentRow.insertCell(-1).innerHTML = assignmentData['Name']
+    // if assignment is added by user, add input box so they can give it a name
+    if (!userAdded) {
+        assignmentRow.insertCell(-1).innerHTML = assignmentData['Name']
+    } else {
+        let input = document.createElement('input')
+        input.value = assignmentData['Name']
+        input.type = 'text'
+        input.style.width = '120px'
+        input.addEventListener('keyup', ({key}) => {
+            if (key === 'Enter') {
+                assignmentRow.children.item(1).innerHTML = input.value // remove input box
+                // update assignment name
+                for (let assign of categoriesMap[categoryName]['Assignments']) {
+                    if (assign['ID'] === assignmentData['ID']) {
+                        assign['Name'] = input.value
+                    }
+                }
+            }
+        })
+        assignmentRow.insertCell(-1).appendChild(input)
+    }
     assignmentRow.appendChild(createAssignmentInput(assignmentData['ID'], categoryName, 'Score', assignmentData['Score']))
     assignmentRow.appendChild(createAssignmentInput(assignmentData['ID'], categoryName, 'Total', assignmentData['Total']))
     assignmentRow.insertCell(-1).innerHTML = (assignmentData['Include'] ?
