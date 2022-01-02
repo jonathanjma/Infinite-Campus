@@ -125,7 +125,7 @@ fetch(coursesBase).then(r => r.json()).then(json => {
     console.log(categoriesMap)
     // console.log(progressObj)
 
-    let pointsBased = false
+    let pointsBased = false // if class is points based (no weighted categories)
     let weightTotal = 0
     let runningScore = 0, runningTotal = 0
 
@@ -147,16 +147,18 @@ fetch(coursesBase).then(r => r.json()).then(json => {
                 'Multiplier': 1,
             }
             category['Assignments'].push(data)
-            category['Score'] += unpubScore
-            category['Total'] += unpubTotal
+            // update point totals
+            category['Score'] += unpubScore; category['Total'] += unpubTotal
+            category['Original Score'] += unpubScore; category['Original Total'] += unpubTotal
             id_counter++
         }
 
-        // create category specific html elements: heading, assignment rows + table, add assignment button
+        // create category specific html elements: title, assignment rows + table, add assignment button
         let catHeading = document.createElement('h2')
         catHeading.innerHTML = catName
         document.body.append(catHeading)
 
+        // assignment table
         let catTable = document.createElement('table')
         catTable.id = catName + '_T' // category name_T = if of category table
         catTable.style.paddingLeft = '20px'
@@ -165,6 +167,7 @@ fetch(coursesBase).then(r => r.json()).then(json => {
         }
         document.body.append(catTable)
 
+        // add assignment button
         let addButton = document.createElement('button')
         addButton.innerHTML = '+ Add'
         addButton.onclick = () => {
@@ -281,25 +284,25 @@ function createAssignmentInput(id, catTitle, fieldName, initValue) {
 
 // update assignment grade
 function updateAssignment(id, catTitle, fieldName, newVal) {
-    for (let assign of categoriesMap[catTitle]['Assignments']) {
-        if (assign['ID'] === id) {
-            // if assignment was ungraded before we need to update the category's score and total points
-            if (!assign['Include']) {
-                categoriesMap[catTitle][fieldName] += newVal * assign['Multiplier']
-                let field2 = fieldName === 'Score' ? 'Total' : 'Score'
-                categoriesMap[catTitle][field2] += assign[field2] * assign['Multiplier']
-                assign['Include'] = true
-            } else { // otherwise, only the delta of the changed score/total is needed
-                categoriesMap[catTitle][fieldName] += (newVal - assign[fieldName]) * assign['Multiplier']
-            }
-            assign[fieldName] = newVal // update assignment grade
-            // update row with new grade
-            let assignRow = document.getElementById(id)
-            assignRow.children.item(fieldName === 'Score' ? 2 : 3).value = newVal
-            assignRow.children.item(4).innerHTML =
-                ((assign['Score'] / assign['Total']) * 100).toFixed(2) + '%'
-        }
+    let assign = categoriesMap[catTitle]['Assignments'].find(assignment => assignment['ID'] === id)
+    console.log(assign)
+
+    // if assignment was ungraded before we need to update the category's score and total points
+    if (!assign['Include']) {
+        categoriesMap[catTitle][fieldName] += newVal * assign['Multiplier']
+        let field2 = fieldName === 'Score' ? 'Total' : 'Score'
+        categoriesMap[catTitle][field2] += assign[field2] * assign['Multiplier']
+        assign['Include'] = true
+    } else { // otherwise, only the delta of the changed score/total is needed
+        categoriesMap[catTitle][fieldName] += (newVal - assign[fieldName]) * assign['Multiplier']
     }
+    assign[fieldName] = newVal // update assignment grade
+    // update row with new grade
+    let assignRow = document.getElementById(id)
+    assignRow.children.item(fieldName === 'Score' ? 2 : 3).value = newVal
+    assignRow.children.item(4).innerHTML =
+        ((assign['Score'] / assign['Total']) * 100).toFixed(2) + '%'
+
     refreshCategory(catTitle)
 }
 
@@ -352,11 +355,8 @@ function createAssignmentRow(assignmentData, categoryTable, categoryTitle, userA
             if (key === 'Enter') {
                 assignmentRow.children.item(1).innerHTML = nameInput.value // remove input box
                 // update assignment name
-                for (let assign of categoriesMap[categoryTitle]['Assignments']) {
-                    if (assign['ID'] === assignmentData['ID']) {
-                        assign['Name'] = nameInput.value
-                    }
-                }
+                let assign = categoriesMap[categoryTitle]['Assignments'].find(assignment => assignment['ID'] === assignmentData['ID'])
+                assign['Name'] = nameInput.value
             }
         })
         assignmentRow.insertCell(-1).appendChild(nameInput)
@@ -375,27 +375,27 @@ function createAssignmentRow(assignmentData, categoryTable, categoryTitle, userA
     let total_original = assignmentData['Total']
     let include_original = assignmentData['Include']
     resetButton.onclick = () => {
-        for (let assign of categoriesMap[categoryTitle]['Assignments']) {
-            if (assign['ID'] === assignmentData['ID']) {
-                // if assignment was ungraded before we need to revert the category's score and total points
-                if (!include_original && assign['Include']) {
-                    categoriesMap[categoryTitle]['Score'] -= assign['Score'] * assign['Multiplier']
-                    categoriesMap[categoryTitle]['Total'] -= assign['Total'] * assign['Multiplier']
-                    assign['Include'] = false
-                } else { // otherwise, only the delta of the changed score/total is needed
-                    categoriesMap[categoryTitle]['Score'] += (score_original - assign['Score']) * assign['Multiplier']
-                    categoriesMap[categoryTitle]['Total'] += (total_original - assign['Total']) * assign['Multiplier']
-                }
-                // update assignment grade
-                assign['Score'] = score_original; assign['Total'] = total_original
-                // update row with original grade
-                let assignRow = document.getElementById(assignmentData['ID'])
-                assignRow.children.item(2).value = score_original
-                assignRow.children.item(3).value = total_original
-                assignRow.children.item(4).innerHTML = (include_original ?
-                    ((assign['Score'] / assign['Total']) * 100).toFixed(2) : '-') + '%'
-            }
+        let assign = categoriesMap[categoryTitle]['Assignments'].find(assignment => assignment['ID'] === assignmentData['ID'])
+        console.log(assign)
+
+        // if assignment was ungraded before we need to revert the category's score and total points
+        if (!include_original && assign['Include']) {
+            categoriesMap[categoryTitle]['Score'] -= assign['Score'] * assign['Multiplier']
+            categoriesMap[categoryTitle]['Total'] -= assign['Total'] * assign['Multiplier']
+            assign['Include'] = false
+        } else { // otherwise, only the delta of the changed score/total is needed
+            categoriesMap[categoryTitle]['Score'] += (score_original - assign['Score']) * assign['Multiplier']
+            categoriesMap[categoryTitle]['Total'] += (total_original - assign['Total']) * assign['Multiplier']
         }
+        // update assignment grade
+        assign['Score'] = score_original; assign['Total'] = total_original
+        // update row with original grade
+        let assignRow = document.getElementById(assignmentData['ID'])
+        assignRow.children.item(2).value = score_original
+        assignRow.children.item(3).value = total_original
+        assignRow.children.item(4).innerHTML = (include_original ?
+            ((assign['Score'] / assign['Total']) * 100).toFixed(2) : '-') + '%'
+
         refreshCategory(categoryTitle)
     }
     assignmentRow.appendChild(resetButton)
