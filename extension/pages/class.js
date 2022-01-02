@@ -1,8 +1,5 @@
 /*
 things to do:
-rename new assignments
-reset updated assignments
-back to home page button
 grade over time graph (unpublished assignments might be sus: solid line pub, dotted unpub?)
 improve ui (change font/colors/padding)
 
@@ -13,6 +10,9 @@ let production = true
 let coursesBase
 
 let gpSelected = 1 // default semester (will be overwritten by url parameter if it exists)
+document.getElementById('back').onclick = () => { // back to home page button
+    window.open('main.html', '_self')
+}
 
 if (production) {
     coursesBase = 'https://fremontunifiedca.infinitecampus.org/campus/resources/portal/grades/detail/'
@@ -175,10 +175,10 @@ fetch(coursesBase).then(r => r.json()).then(json => {
         /////
 
         // Build final grade using category point totals
-        weightTotal += category['Weight'] // needed if categories have no assignments
         pointsBased = category['Weight'] === 0
         if (!pointsBased) { // regular grade with weighed categories
             runningTotal += (category['Score'] / category['Total']) * category['Weight']
+            weightTotal += category['Weight'] // needed if categories have no assignments8
         } else { // grade with no weighted categories
             runningScore += category['Score']
             runningTotal += category['Total']
@@ -222,6 +222,7 @@ fetch(coursesBase).then(r => r.json()).then(json => {
     }
 })
 
+// recalculate overall grades
 function refreshCategory(categoryName) {
     // recalculate category summary
     let category = categoriesMap[categoryName]
@@ -241,7 +242,9 @@ function refreshCategory(categoryName) {
     for (let catName in categoriesMap) {
         category = categoriesMap[catName]
         if (!category['Points Based']) {
-            if (category['Score'] !== 0 && category['Total'] !== 0) {
+            // categories must have at more than 0 total points
+            // idk what happens if weighted category only has ec (ex. 10/0)
+            if (category['Total'] !== 0) {
                 runningTotal += (category['Score'] / category['Total']) * category['Weight']
                 weightTotal += category['Weight']
             }
@@ -262,27 +265,27 @@ function refreshCategory(categoryName) {
 
 // create assignment grade inputs
 function createAssignmentInput(id, catTitle, fieldName, initValue) {
-    let input = document.createElement('input')
-    input.value = initValue
-    input.type = 'number'
-    input.style.width = '50px'
-    input.oninput = () => {
+    let gradeInput = document.createElement('input')
+    gradeInput.value = initValue
+    gradeInput.type = 'number'
+    gradeInput.min = '0'
+    gradeInput.style.width = '50px'
+    gradeInput.oninput = () => {
         // make sure input is not negative, default to 0 if input field is empty
-        if (input.value >= 0) {
-            updateAssignment(id, catTitle, fieldName, input.value.length > 0 ? parseFloat(input.value) : 0)
+        if (gradeInput.value >= 0) {
+            updateAssignment(id, catTitle, fieldName, gradeInput.value.length > 0 ? parseFloat(gradeInput.value) : 0)
         }
     }
-    return input
+    return gradeInput
 }
 
 // update assignment grade
 function updateAssignment(id, catTitle, fieldName, newVal) {
-    let assignRow = document.getElementById(id)
     for (let assign of categoriesMap[catTitle]['Assignments']) {
         if (assign['ID'] === id) {
-            // if assignment was ungraded before we need to update both the category's total score and points
+            // if assignment was ungraded before we need to update the category's score and total points
             if (!assign['Include']) {
-                categoriesMap[catTitle][fieldName] += newVal
+                categoriesMap[catTitle][fieldName] += newVal * assign['Multiplier']
                 let field2 = fieldName === 'Score' ? 'Total' : 'Score'
                 categoriesMap[catTitle][field2] += assign[field2] * assign['Multiplier']
                 assign['Include'] = true
@@ -291,6 +294,7 @@ function updateAssignment(id, catTitle, fieldName, newVal) {
             }
             assign[fieldName] = newVal // update assignment grade
             // update row with new grade
+            let assignRow = document.getElementById(id)
             assignRow.children.item(fieldName === 'Score' ? 2 : 3).value = newVal
             assignRow.children.item(4).innerHTML =
                 ((assign['Score'] / assign['Total']) * 100).toFixed(2) + '%'
@@ -324,14 +328,15 @@ function addAssignment(catTitle) {
 }
 
 // create html row for each assignment
-function createAssignmentRow(assignmentData, categoryTable, categoryName, userAdded) {
+function createAssignmentRow(assignmentData, categoryTable, categoryTitle, userAdded) {
     let assignmentRow = categoryTable.insertRow(-1)
     assignmentRow.id = assignmentData['ID'] // assignment id = id of assignment row
 
+    // allow user to delete assignments
     let deleteButton = document.createElement('button')
     deleteButton.innerHTML = 'X'
     deleteButton.onclick = () => {
-        deleteAssignment(assignmentData['ID'], categoryName)
+        deleteAssignment(assignmentData['ID'], categoryTitle)
     }
     assignmentRow.appendChild(deleteButton)
 
@@ -339,29 +344,63 @@ function createAssignmentRow(assignmentData, categoryTable, categoryName, userAd
     if (!userAdded) {
         assignmentRow.insertCell(-1).innerHTML = assignmentData['Name']
     } else {
-        let input = document.createElement('input')
-        input.value = assignmentData['Name']
-        input.type = 'text'
-        input.style.width = '120px'
-        input.addEventListener('keyup', ({key}) => {
+        let nameInput = document.createElement('input')
+        nameInput.value = assignmentData['Name']
+        nameInput.type = 'text'
+        nameInput.style.width = '120px'
+        nameInput.addEventListener('keyup', ({key}) => {
             if (key === 'Enter') {
-                assignmentRow.children.item(1).innerHTML = input.value // remove input box
+                assignmentRow.children.item(1).innerHTML = nameInput.value // remove input box
                 // update assignment name
-                for (let assign of categoriesMap[categoryName]['Assignments']) {
+                for (let assign of categoriesMap[categoryTitle]['Assignments']) {
                     if (assign['ID'] === assignmentData['ID']) {
-                        assign['Name'] = input.value
+                        assign['Name'] = nameInput.value
                     }
                 }
             }
         })
-        assignmentRow.insertCell(-1).appendChild(input)
+        assignmentRow.insertCell(-1).appendChild(nameInput)
     }
-    assignmentRow.appendChild(createAssignmentInput(assignmentData['ID'], categoryName, 'Score', assignmentData['Score']))
-    assignmentRow.appendChild(createAssignmentInput(assignmentData['ID'], categoryName, 'Total', assignmentData['Total']))
+    assignmentRow.appendChild(createAssignmentInput(assignmentData['ID'], categoryTitle, 'Score', assignmentData['Score']))
+    assignmentRow.appendChild(createAssignmentInput(assignmentData['ID'], categoryTitle, 'Total', assignmentData['Total']))
     assignmentRow.insertCell(-1).innerHTML = (assignmentData['Include'] ?
             ((assignmentData['Score'] / assignmentData['Total']) * 100).toFixed(2) : '-')
         + '%' // only calculate grade if assignment graded
 
+    // allow user to reset original assignments to original score/total points
+    let resetButton = document.createElement('button')
+    resetButton.innerHTML = '⭯'
+    resetButton.disabled = userAdded
+    let score_original = assignmentData['Score']
+    let total_original = assignmentData['Total']
+    let include_original = assignmentData['Include']
+    resetButton.onclick = () => {
+        for (let assign of categoriesMap[categoryTitle]['Assignments']) {
+            if (assign['ID'] === assignmentData['ID']) {
+                // if assignment was ungraded before we need to revert the category's score and total points
+                if (!include_original && assign['Include']) {
+                    categoriesMap[categoryTitle]['Score'] -= assign['Score'] * assign['Multiplier']
+                    categoriesMap[categoryTitle]['Total'] -= assign['Total'] * assign['Multiplier']
+                    assign['Include'] = false
+                } else { // otherwise, only the delta of the changed score/total is needed
+                    categoriesMap[categoryTitle]['Score'] += (score_original - assign['Score']) * assign['Multiplier']
+                    categoriesMap[categoryTitle]['Total'] += (total_original - assign['Total']) * assign['Multiplier']
+                }
+                // update assignment grade
+                assign['Score'] = score_original; assign['Total'] = total_original
+                // update row with original grade
+                let assignRow = document.getElementById(assignmentData['ID'])
+                assignRow.children.item(2).value = score_original
+                assignRow.children.item(3).value = total_original
+                assignRow.children.item(4).innerHTML = (include_original ?
+                    ((assign['Score'] / assign['Total']) * 100).toFixed(2) : '-') + '%'
+            }
+        }
+        refreshCategory(categoryTitle)
+    }
+    assignmentRow.appendChild(resetButton)
+
+    // display assignment teacher comments and point multiplier
     let moreInfo = ''
     moreInfo += assignmentData['Comments'] !== null ? (assignmentData['Comments']) : ''
     moreInfo += (assignmentData['Comments'] !== null && assignmentData['Multiplier'] !== 1) ? ', ' : ''
