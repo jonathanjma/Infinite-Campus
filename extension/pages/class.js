@@ -1,6 +1,5 @@
 /*
 things to do:
-grade over time graph (unpublished assignments might be sus: solid line pub, dotted unpub?)
 improve ui (change font/colors/padding)
 
 note: 1024 x 640 for web store screenshots
@@ -27,10 +26,11 @@ if (production) {
 }
 
 let categoriesMap = {}
-let summaryTable = document.getElementById('summary') // grade/category summary table
+let summaryTable = document.getElementById('summary_T') // grade/category summary table
 let id_counter = 1 // to ensure all assignments have unique html element ids
 
 let gradeOriginalNumer = 0, gradeOriginalDenom = 0 // for % grade difference
+let graphData // cloned categoriesMap used to make grade history graph
 
 fetch(coursesBase).then(r => r.json()).then(json => {
 
@@ -139,7 +139,7 @@ fetch(coursesBase).then(r => r.json()).then(json => {
             let data = {
                 'ID': id_counter,
                 'Name': 'Unpublished Assignments',
-                'Due Date': Date.now(),
+                'Due Date': (new Date).toISOString(), // time right now
                 'Score': unpubScore,
                 'Total': unpubTotal,
                 'Include': true,
@@ -181,7 +181,7 @@ fetch(coursesBase).then(r => r.json()).then(json => {
         pointsBased = category['Weight'] === 0
         if (!pointsBased) { // regular grade with weighed categories
             runningTotal += (category['Score'] / category['Total']) * category['Weight']
-            weightTotal += category['Weight'] // needed if categories have no assignments8
+            weightTotal += category['Weight'] // needed if categories have no assignments
         } else { // grade with no weighted categories
             runningScore += category['Score']
             runningTotal += category['Total']
@@ -212,6 +212,13 @@ fetch(coursesBase).then(r => r.json()).then(json => {
     gradeSumRow.insertCell(4).innerHTML =
         ((gradeOriginalNumer / gradeOriginalDenom) * 100).toFixed(2) + '%'
     gradeSumRow.insertCell(5).innerHTML = '0.00%'
+
+    // create deep clone so that user added assignments not included
+    graphData = JSON.parse(JSON.stringify(categoriesMap))
+    document.getElementById('graph').onclick = () => { // open graph button
+        // encode graph data in base64
+        window.open('graph.html?n=' + document.title + '&data=' + btoa(JSON.stringify(graphData)), '_self')
+    }
 
 }).catch(error => {
     // show error message if user is not logged in to IC
@@ -312,7 +319,7 @@ function addAssignment(catTitle) {
     let data = {
         'ID': id_counter,
         'Name': 'New Assignment',
-        'Due Date': Date.now(),
+        'Due Date': (new Date).toISOString(),
         'Score': 0,
         'Total': 0,
         'Include': true,

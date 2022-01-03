@@ -23,6 +23,7 @@
   ],
   "web_accessible_resources": [
     "pages/main.html",
-    "pages/class.html"
+    "pages/class.html",
+    "pages/graph.html"
   ]
 }
