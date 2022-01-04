@@ -1,3 +1,9 @@
+/*
+things to do:
+improve ui (change font/colors/padding)
+
+note: 1216 x 760 for web store screenshots
+ */
 
 let main = 'https://fremontunifiedca.infinitecampus.org/campus/resources/portal/grades'
 // let main = '../../test_data/main.json'

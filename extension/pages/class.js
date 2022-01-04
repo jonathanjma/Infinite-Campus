@@ -1,9 +1,3 @@
-/*
-things to do:
-improve ui (change font/colors/padding)
-
-note: 1024 x 640 for web store screenshots
- */
 
 let production = true
 let coursesBase
