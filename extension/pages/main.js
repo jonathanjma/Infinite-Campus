@@ -32,6 +32,12 @@ fetch(main).then(r => r.json()).then(json => {
     console.log(error);
     console.log('sign in at https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp')
 
+    // popup window to log in
+    let width = 650, height = 500
+    let left = (screen.width - width) / 2, top = (screen.height - height) / 2
+    window.open('https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp','popUpWindow',
+        `width=${width},height=${height},left=${left},top=${top}`)
+
     document.getElementById('semChoose').remove()
     document.getElementById('courses_T').remove()
     document.getElementById('error').hidden = false
@@ -71,7 +77,7 @@ function createHomeTable() {
         // link to open class-specific page
         let classLink = document.createElement('a')
         classLink.innerHTML = 'Open Class'
-        classLink.href = 'class.html?id=' + courseId + '&n=' + courseName + '&gp=' + gpSelected
+        classLink.href = `class.html?id=${courseId}&n=${courseName}&gp=${gpSelected}`
         courseRow.appendChild(classLink)
     }
 }

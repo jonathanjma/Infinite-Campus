@@ -217,13 +217,18 @@ fetch(coursesBase).then(r => r.json()).then(json => {
     graphData = JSON.parse(JSON.stringify(categoriesMap))
     document.getElementById('graph').onclick = () => { // open graph button
         // encode graph data in base64
-        window.open('graph.html?n=' + document.title + '&data=' + btoa(JSON.stringify(graphData)), '_self')
+        window.open(`graph.html?n=${document.title}&data=${btoa(JSON.stringify(graphData))}`, '_self')
     }
 
 }).catch(error => {
     // show error message if user is not logged in to IC
     console.log(error)
     console.log('sign in at https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp')
+
+    let width = 650, height = 500
+    let left = (screen.width - width) / 2, top = (screen.height - height) / 2
+    window.open('https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp','popUpWindow',
+        `width=${width},height=${height},left=${left},top=${top}`)
 
     document.getElementById('summary').remove()
     document.getElementById('error').hidden = false

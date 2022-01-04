@@ -1,10 +1,13 @@
 
 let regex_result = window.location.search.match('n=(.*?)&data=(.*?)$') // get class name + graph data from url
 let className = regex_result[1].split('%20').join(' ')
-// document.getElementById('title').innerHTML = className + ' Graph'
 document.title = className + ' Grade History'
 categoriesData = JSON.parse(atob(regex_result[2])) // decode base64
 console.log(categoriesData)
+
+document.getElementById('back').onclick = () => { // back to class page button
+    history.back()
+}
 
 // create empty categories data, build all assignments list
 let assignmentList = []
@@ -69,7 +72,7 @@ console.log(graphLabels)
 console.log(gradeHistory)
 
 // create graph using chart.js
-let ctx = document.getElementById('graph').getContext('2d')
+let ctx = document.getElementById('graph')
 // used to show different colors when grade increases/decreases
 let down = (ctx, value) => ctx.p0.parsed.y > ctx.p1.parsed.y ? value : undefined
 // show unpublished assignments with dotted line
