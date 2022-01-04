@@ -26,6 +26,6 @@ Note: Calculated grades may be off by at most 0.01% due to rounding errors
 
 For any bugs or feature requests, do not hesitate to email appdev.micro@gmail.com or open an issue on GitHub with a detailed description of the issue/feature.
 
-![](imgs/home page.png)
-![](imgs/class page.png)
-![](imgs/graph page.png)
+![](imgs/home_page.png)
+![](imgs/class_page.png)
+![](imgs/graph_page.png)
