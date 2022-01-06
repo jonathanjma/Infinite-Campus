@@ -80,10 +80,13 @@ function createHomeTable() {
             }
         }
 
-        // link to open class-specific page
-        let classLink = document.createElement('a')
-        classLink.innerHTML = 'Open Class'
-        classLink.href = `class.html?id=${courseId}&n=${courseName}&gp=${gpSelected}`
-        courseRow.appendChild(classLink)
+        // button to open class-specific page
+        let classButton = document.createElement('button')
+        classButton.innerHTML = 'Open Class'
+        classButton.style.padding = '5px 15px'
+        classButton.onclick = () => {
+            window.open(`class.html?id=${courseId}&n=${courseName}&gp=${gpSelected}`, '_self')
+        }
+        courseRow.insertCell(4).appendChild(classButton)
     }
 }

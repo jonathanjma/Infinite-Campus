@@ -4,11 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Home Page</title>
-    <style>
-        th, td {
-            padding: 7px 12px;
-        }
-    </style>
+    <link rel="stylesheet" href="../water.light.css">
 </head>
 <body style="padding-left: 10px">
     <h1>Infinite Campus Grades++</h1>
@@ -26,7 +22,7 @@
 
     <table id="courses_T">
         <thead>
-            <tr style="text-align: left">
+            <tr>
                 <th>Class</th>
                 <th>Teacher</th>
                 <th>% Grade</th>
@@ -38,8 +34,8 @@
     </table>
 
     <div id="error" hidden>
-        <p>Error: you are not logged into Infinite Campus</p>
-        <p>After logging in, refresh this page</p>
+        <h3 style="color: red">Error: You are not logged into Infinite Campus</h3>
+        <h3 style="margin-top: 12px; margin-bottom: 24px">After logging in, refresh this page</h3>
         <button id="login">Log in here</button>
     </div>
 

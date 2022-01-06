@@ -4,14 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Graph</title>
+    <link rel="stylesheet" href="../water.light.css">
+    <style>
+        #elements {
+            display: flex;
+            position: relative;
+        }
+        #back {
+            float: left;
+            position: absolute;
+            left: 0;
+            top: 0;
+            padding: 8px 16px;
+        }
+        #graph_div {
+            width: 80vw;
+            text-align: center;
+            flex: 1 0 auto;
+        }
+    </style>
 </head>
 <body>
-    <h1 id="title" hidden>Graph moment</h1>
 
-    <button id="back" style="float:left; margin: 10px">🠈 Back</button>
+    <div id="elements">
+        <button id="back">🠈 Back</button>
 
-    <div style="width: 80vw; margin: 0 auto;">
-        <canvas id="graph" ></canvas>
+        <div id="graph_div">
+            <canvas id="graph" ></canvas>
+        </div>
     </div>
 
     <script src="../chart.js"></script>

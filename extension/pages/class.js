@@ -147,28 +147,25 @@ fetch(coursesBase).then(r => r.json()).then(json => {
             id_counter++
         }
 
-        // create category specific html elements: title, assignment rows + table, add assignment button
-        let catHeading = document.createElement('h2')
-        catHeading.innerHTML = catName
-        document.body.append(catHeading)
+        // create collapsable html element for category assignment table
+        let catParent = document.createElement('details')
+        catParent.open = false
 
-        // assignment table
+        // create category header
+        let catHeading = document.createElement('summary')
+        catHeading.innerHTML = catName
+        catParent.appendChild(catHeading)
+
+        // create assignment table
         let catTable = document.createElement('table')
         catTable.id = catName + '_T' // category name_T = if of category table
         catTable.style.paddingLeft = '20px'
         for (let assignment of category['Assignments']) {
             createAssignmentRow(assignment, catTable, catName, false)
         }
-        document.body.append(catTable)
-
-        // add assignment button
-        let addButton = document.createElement('button')
-        addButton.innerHTML = '+ Add'
-        addButton.onclick = () => {
-            addAssignment(catName)
-        }
+        catParent.appendChild(catTable)
+        document.body.append(catParent)
         document.body.append(document.createElement('br'))
-        document.body.append(addButton)
         /////
 
         // Build final grade using category point totals
@@ -207,6 +204,25 @@ fetch(coursesBase).then(r => r.json()).then(json => {
         ((gradeOriginalNumer / gradeOriginalDenom) * 100).toFixed(2) + '%'
     gradeSumRow.insertCell(5).innerHTML = '0.00%'
 
+    // populate new assignment category dropdown menu
+    let catDropdown = document.getElementById('catDropdown')
+    Object.keys(categoriesMap).forEach((key) => {
+        let option = document.createElement("option")
+        option.text = key
+        catDropdown.add(option)
+    })
+    // when user submits new assignment
+    document.getElementById('assignSubmit').onclick = () => {
+        let name = document.getElementById('assignName')
+        let score = document.getElementById('assignScore')
+        let total = document.getElementById('assignTotal')
+        addAssignment(catDropdown.value, name.value, parseFloat(score.value), parseFloat(total.value))
+        catDropdown.selectedIndex = 0 // reset dropdown + input boxes
+        name.value = ''
+        score.value = ''
+        total.value = ''
+    }
+
     // create deep clone so that user added assignments not included
     graphData = JSON.parse(JSON.stringify(categoriesMap))
     document.getElementById('graph').onclick = () => { // open graph button
@@ -224,7 +240,7 @@ fetch(coursesBase).then(r => r.json()).then(json => {
     window.open('https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp','popUpWindow',
         `width=${width},height=${height},left=${left},top=${top}`)
 
-    document.getElementById('summary').remove()
+    document.getElementById('summary_addAssign').remove()
     document.getElementById('error').hidden = false
     document.getElementById('login').onclick = () => {
         window.open('https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp', '_blank')
@@ -241,9 +257,10 @@ function refreshCategory(categoryName) {
     catRow.children.item(3).innerHTML = category['Total'].toFixed(2)
     catRow.children.item(4).innerHTML =
         ((category['Score'] / category['Total']) * 100).toFixed(2) + '%'
-    catRow.children.item(5).innerHTML =
-        ((category['Score'] / category['Total'] - category['Original Score'] / category['Original Total']) * 100)
-            .toFixed(2) + '%'
+    let catPercentDiff =
+        ((category['Score'] / category['Total'] - category['Original Score'] / category['Original Total']) * 100).toFixed(2)
+    catRow.children.item(5).innerHTML = catPercentDiff + '%'
+    catRow.children.item(5).style.color = getDiffColor(catPercentDiff) // green if +, red -, black 0
 
     // recalculate current grade
     let runningScore = 0, runningTotal = 0
@@ -267,9 +284,9 @@ function refreshCategory(categoryName) {
     let gradeDenom = !category['Points Based'] ? weightTotal : runningTotal
     gradeSumRow.children.item(4).innerHTML =
         ((gradeNumer / gradeDenom) * 100).toFixed(2) + '%'
-    gradeSumRow.children.item(5).innerHTML =
-        ((gradeNumer / gradeDenom - gradeOriginalNumer / gradeOriginalDenom) * 100)
-            .toFixed(2) + '%'
+    let gradePercentDiff = ((gradeNumer / gradeDenom - gradeOriginalNumer / gradeOriginalDenom) * 100).toFixed(2)
+    gradeSumRow.children.item(5).innerHTML = gradePercentDiff + '%'
+    gradeSumRow.children.item(5).style.color = getDiffColor(gradePercentDiff)
 }
 
 // create assignment grade inputs
@@ -313,14 +330,14 @@ function updateAssignment(id, catTitle, fieldName, newVal) {
 }
 
 // add assignment
-function addAssignment(catTitle) {
+function addAssignment(catTitle, name, scorePts, totalPts) {
     // add map entry
     let data = {
         'ID': id_counter,
-        'Name': 'New Assignment',
+        'Name': name,
         'Due Date': (new Date).toISOString(),
-        'Score': 0,
-        'Total': 0,
+        'Score': scorePts,
+        'Total': totalPts,
         'Include': true,
         'Comments': null,
         'Multiplier': 1,
@@ -347,29 +364,13 @@ function createAssignmentRow(assignmentData, categoryTable, categoryTitle, userA
     deleteButton.onclick = () => {
         deleteAssignment(assignmentData['ID'], categoryTitle)
     }
-    assignmentRow.appendChild(deleteButton)
+    assignmentRow.insertCell(0).appendChild(deleteButton)
 
-    // if assignment is added by user, add input box so they can give it a name
-    if (!userAdded) {
-        assignmentRow.insertCell(-1).innerHTML = assignmentData['Name']
-    } else {
-        let nameInput = document.createElement('input')
-        nameInput.value = assignmentData['Name']
-        nameInput.type = 'text'
-        nameInput.style.width = '120px'
-        nameInput.addEventListener('keyup', ({key}) => {
-            if (key === 'Enter') {
-                assignmentRow.children.item(1).innerHTML = nameInput.value // remove input box
-                // update assignment name
-                let assign = categoriesMap[categoryTitle]['Assignments'].find(assignment => assignment['ID'] === assignmentData['ID'])
-                assign['Name'] = nameInput.value
-            }
-        })
-        assignmentRow.insertCell(-1).appendChild(nameInput)
-    }
-    assignmentRow.appendChild(createAssignmentInput(assignmentData['ID'], categoryTitle, 'Score', assignmentData['Score']))
-    assignmentRow.appendChild(createAssignmentInput(assignmentData['ID'], categoryTitle, 'Total', assignmentData['Total']))
-    assignmentRow.insertCell(-1).innerHTML = (assignmentData['Include'] ?
+    // assignment name, score/total input, and % grade
+    assignmentRow.insertCell(1).innerHTML = assignmentData['Name']
+    assignmentRow.insertCell(2).appendChild(createAssignmentInput(assignmentData['ID'], categoryTitle, 'Score', assignmentData['Score']))
+    assignmentRow.insertCell(3).appendChild(createAssignmentInput(assignmentData['ID'], categoryTitle, 'Total', assignmentData['Total']))
+    assignmentRow.insertCell(4).innerHTML = (assignmentData['Include'] ?
             ((assignmentData['Score'] / assignmentData['Total']) * 100).toFixed(2) : '-')
         + '%' // only calculate grade if assignment graded
 
@@ -397,21 +398,21 @@ function createAssignmentRow(assignmentData, categoryTable, categoryTitle, userA
         assign['Score'] = score_original; assign['Total'] = total_original
         // update row with original grade
         let assignRow = document.getElementById(assignmentData['ID'])
-        assignRow.children.item(2).value = score_original
-        assignRow.children.item(3).value = total_original
+        assignRow.children.item(2).children.item(0).value = score_original
+        assignRow.children.item(3).children.item(0).value = total_original
         assignRow.children.item(4).innerHTML = (include_original ?
             ((assign['Score'] / assign['Total']) * 100).toFixed(2) : '-') + '%'
 
         refreshCategory(categoryTitle)
     }
-    assignmentRow.appendChild(resetButton)
+    assignmentRow.insertCell(5).appendChild(resetButton)
 
     // display assignment teacher comments and point multiplier
     let moreInfo = ''
     moreInfo += assignmentData['Comments'] !== null ? (assignmentData['Comments']) : ''
     moreInfo += (assignmentData['Comments'] !== null && assignmentData['Multiplier'] !== 1) ? ', ' : ''
     moreInfo += assignmentData['Multiplier'] !== 1 ? ('Point Multiplier: ' + assignmentData['Multiplier']) : ''
-    assignmentRow.insertCell(-1).innerHTML = moreInfo
+    assignmentRow.insertCell(6).innerHTML = moreInfo
 }
 
 // delete assignment
@@ -437,4 +438,14 @@ Array.prototype.remove = function(from, to) {
     let rest = this.slice((to || from) + 1 || this.length)
     this.length = from < 0 ? this.length + from : from
     return this.push.apply(this, rest)
+}
+
+function getDiffColor(num) {
+    if (num > 0) {
+        return '#1cef5b'
+    } else if (num < 0) {
+        return 'red'
+    } else {
+        return 'initial'
+    }
 }

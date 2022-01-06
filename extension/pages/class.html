@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Class</title>
+    <link rel="stylesheet" href="../water.light.css">
     <style>
-        th, td {
-            padding: 10px 12px;
-        }
         #header {
             display: flex;
             position: relative;
@@ -17,10 +15,30 @@
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
+            margin: 0;
+            padding: 8px 16px;
         }
         #title {
             text-align: center;
             flex: 1 0 auto;
+            margin: 0;
+        }
+
+        th, td {
+            padding: 10px 10px;
+        }
+        summary {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        #assignAdd * {
+            display: inline;
+        }
+        #summary_T td:nth-of-type(5) {
+            font-weight: bold;
+        }
+        #summary_T tr:last-child {
+            font-weight: bold;
         }
     </style>
 </head>
@@ -30,25 +48,44 @@
         <h1 id="title">moment 2</h1>
     </div>
 
-    <div id="summary">
-        <h2 style="margin-bottom: 5px">Summary</h2>
-        <table id="summary_T">
-            <tr style="text-align: left">
-                <th>Category</th>
-                <th>Weight</th>
-                <th>Score</th>
-                <th>Total</th>
-                <th>Percent</th>
-                <th>% Pts Diff</th>
-            </tr>
+    <div id="summary_addAssign">
+        <h2 style="margin-bottom: 10px">Summary</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Weight</th>
+                    <th>Score</th>
+                    <th>Total</th>
+                    <th>Percent</th>
+                    <th>% Pts Diff</th>
+                </tr>
+            </thead>
+            <tbody id="summary_T"></tbody>
         </table>
+        <button id="graph" style="padding: 10px 15px">Grade History Graph</button>
         <br>
-        <button id="graph">Grade History Graph</button>
+
+        <h2>Add Assignment</h2>
+        <div id="assignAdd">
+            <select id="catDropdown">
+                <option>Choose a Category</option>
+            </select>
+            <p>&nbsp;</p>
+            <input type="text" id="assignName" placeholder="Assignment Name">
+            <p>&nbsp;</p>
+            <input type="number" id="assignScore" placeholder="Points Earned" min="0" style="width: 90px">
+            <p>&nbsp;</p>
+            <input type="number" id="assignTotal" placeholder="Total Points" min="0" style="width: 90px">
+            <p>&nbsp;</p>
+            <button id="assignSubmit">Submit</button>
+        </div>
+        <br>
     </div>
 
     <div id="error" hidden>
-        <p>Error: you are not logged into Infinite Campus</p>
-        <p>After logging in, refresh this page</p>
+        <h3 style="color: red">Error: You are not logged into Infinite Campus</h3>
+        <h3 style="margin-top: 12px; margin-bottom: 24px">After logging in, refresh this page</h3>
         <button id="login">Log in here</button>
     </div>
 

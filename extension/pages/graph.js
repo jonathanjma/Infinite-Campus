@@ -99,13 +99,21 @@ let chart = new Chart(ctx, {
             x: {
                 title: {
                     display: true,
-                    text: 'Assignments'
+                    text: 'Assignments',
+                    font: {
+                        size: 15,
+                        weight: 'bold'
+                    }
                 }
             },
             y: {
                 title: {
                     display: true,
-                    text: 'Grade %'
+                    text: 'Grade %',
+                    font: {
+                        size: 15,
+                        weight: 'bold'
+                    }
                 }
             }
         },
