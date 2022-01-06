@@ -216,11 +216,14 @@ fetch(coursesBase).then(r => r.json()).then(json => {
         let name = document.getElementById('assignName')
         let score = document.getElementById('assignScore')
         let total = document.getElementById('assignTotal')
-        addAssignment(catDropdown.value, name.value, parseFloat(score.value), parseFloat(total.value))
-        catDropdown.selectedIndex = 0 // reset dropdown + input boxes
-        name.value = ''
-        score.value = ''
-        total.value = ''
+        // make sure all are fields filled out
+        if (catDropdown.selectedIndex !== 0 && name.value.length > 0 && score.value.length > 0 && total.value.length > 0) {
+            addAssignment(catDropdown.value, name.value, parseFloat(score.value), parseFloat(total.value))
+            catDropdown.selectedIndex = 0 // reset dropdown + input boxes
+            name.value = ''
+            score.value = ''
+            total.value = ''
+        }
     }
 
     // create deep clone so that user added assignments not included
@@ -246,6 +249,72 @@ fetch(coursesBase).then(r => r.json()).then(json => {
         window.open('https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp', '_blank')
     }
 })
+
+// add assignment
+function addAssignment(catTitle, name, scorePts, totalPts) {
+    // add map entry
+    let data = {
+        'ID': id_counter,
+        'Name': name,
+        'Due Date': (new Date).toISOString(),
+        'Score': scorePts,
+        'Total': totalPts,
+        'Include': true,
+        'Comments': null,
+        'Multiplier': 1,
+    }
+    id_counter++
+    categoriesMap[catTitle]['Assignments'].push(data)
+    categoriesMap[catTitle]['Score'] += data['Score']
+    categoriesMap[catTitle]['Total'] += data['Total']
+
+    // create new assignment row
+    let catTable = document.getElementById(catTitle + '_T')
+    createAssignmentRow(data, catTable, catTitle, true)
+    refreshCategory(catTitle)
+}
+
+// update assignment grade
+function updateAssignment(id, catTitle, fieldName, newVal) {
+    let assign = categoriesMap[catTitle]['Assignments'].find(assignment => assignment['ID'] === id)
+    console.log(assign)
+
+    // if assignment was ungraded before we need to update the category's score and total points
+    if (!assign['Include']) {
+        categoriesMap[catTitle][fieldName] += newVal * assign['Multiplier']
+        let field2 = fieldName === 'Score' ? 'Total' : 'Score'
+        categoriesMap[catTitle][field2] += assign[field2] * assign['Multiplier']
+        assign['Include'] = true
+    } else { // otherwise, only the delta of the changed score/total is needed
+        categoriesMap[catTitle][fieldName] += (newVal - assign[fieldName]) * assign['Multiplier']
+    }
+    assign[fieldName] = newVal // update assignment grade
+    // update row with new grade
+    let assignRow = document.getElementById(id)
+    assignRow.children.item(fieldName === 'Score' ? 2 : 3).value = newVal
+    assignRow.children.item(4).innerHTML =
+        ((assign['Score'] / assign['Total']) * 100).toFixed(2) + '%'
+
+    refreshCategory(catTitle)
+}
+
+// delete assignment
+function deleteAssignment(id, catTitle) {
+    // delete map entry
+    let i = 0
+    for (let assign of categoriesMap[catTitle]['Assignments']) {
+        if (assign['ID'] === id) {
+            if (assign['Include']) {
+                categoriesMap[catTitle]['Score'] -= assign['Score'] * assign['Multiplier']
+                categoriesMap[catTitle]['Total'] -= assign['Total'] * assign['Multiplier']
+            }
+            categoriesMap[catTitle]['Assignments'].remove(i)
+        }
+        i++
+    }
+    document.getElementById(id).remove() // delete row
+    refreshCategory(catTitle)
+}
 
 // recalculate overall grades
 function refreshCategory(categoryName) {
@@ -303,54 +372,6 @@ function createAssignmentInput(id, catTitle, fieldName, initValue) {
         }
     }
     return gradeInput
-}
-
-// update assignment grade
-function updateAssignment(id, catTitle, fieldName, newVal) {
-    let assign = categoriesMap[catTitle]['Assignments'].find(assignment => assignment['ID'] === id)
-    console.log(assign)
-
-    // if assignment was ungraded before we need to update the category's score and total points
-    if (!assign['Include']) {
-        categoriesMap[catTitle][fieldName] += newVal * assign['Multiplier']
-        let field2 = fieldName === 'Score' ? 'Total' : 'Score'
-        categoriesMap[catTitle][field2] += assign[field2] * assign['Multiplier']
-        assign['Include'] = true
-    } else { // otherwise, only the delta of the changed score/total is needed
-        categoriesMap[catTitle][fieldName] += (newVal - assign[fieldName]) * assign['Multiplier']
-    }
-    assign[fieldName] = newVal // update assignment grade
-    // update row with new grade
-    let assignRow = document.getElementById(id)
-    assignRow.children.item(fieldName === 'Score' ? 2 : 3).value = newVal
-    assignRow.children.item(4).innerHTML =
-        ((assign['Score'] / assign['Total']) * 100).toFixed(2) + '%'
-
-    refreshCategory(catTitle)
-}
-
-// add assignment
-function addAssignment(catTitle, name, scorePts, totalPts) {
-    // add map entry
-    let data = {
-        'ID': id_counter,
-        'Name': name,
-        'Due Date': (new Date).toISOString(),
-        'Score': scorePts,
-        'Total': totalPts,
-        'Include': true,
-        'Comments': null,
-        'Multiplier': 1,
-    }
-    id_counter++
-    categoriesMap[catTitle]['Assignments'].push(data)
-    categoriesMap[catTitle]['Score'] += data['Score']
-    categoriesMap[catTitle]['Total'] += data['Total']
-
-    // create new assignment row
-    let catTable = document.getElementById(catTitle + '_T')
-    createAssignmentRow(data, catTable, catTitle, true)
-    refreshCategory(catTitle)
 }
 
 // create html row for each assignment
@@ -415,24 +436,6 @@ function createAssignmentRow(assignmentData, categoryTable, categoryTitle, userA
     assignmentRow.insertCell(6).innerHTML = moreInfo
 }
 
-// delete assignment
-function deleteAssignment(id, catTitle) {
-    // delete map entry
-    let i = 0
-    for (let assign of categoriesMap[catTitle]['Assignments']) {
-        if (assign['ID'] === id) {
-            if (assign['Include']) {
-                categoriesMap[catTitle]['Score'] -= assign['Score'] * assign['Multiplier']
-                categoriesMap[catTitle]['Total'] -= assign['Total'] * assign['Multiplier']
-            }
-            categoriesMap[catTitle]['Assignments'].remove(i)
-        }
-        i++
-    }
-    document.getElementById(id).remove() // delete row
-    refreshCategory(catTitle)
-}
-
 // remove element from array
 Array.prototype.remove = function(from, to) {
     let rest = this.slice((to || from) + 1 || this.length)
@@ -440,6 +443,7 @@ Array.prototype.remove = function(from, to) {
     return this.push.apply(this, rest)
 }
 
+// + => green, - => red, 0 => black
 function getDiffColor(num) {
     if (num > 0) {
         return '#1cef5b'
