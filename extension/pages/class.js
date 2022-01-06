@@ -57,6 +57,7 @@ fetch(coursesBase).then(r => r.json()).then(json => {
 
     // build categories map from IC json with assignments, point totals, etc. for each category
     let progressObj = {}
+    console.log('raw IC categories:')
     for (let _categoryObj of _categoryObjects) {
         for (let _category of _categoryObj) {
             console.log(_category)
@@ -116,6 +117,7 @@ fetch(coursesBase).then(r => r.json()).then(json => {
             }
         }
     }
+    console.log('parsed IC categories:')
     console.log(categoriesMap)
     // console.log(progressObj)
 
@@ -238,6 +240,7 @@ fetch(coursesBase).then(r => r.json()).then(json => {
     console.log(error)
     console.log('sign in at https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp')
 
+    // auto launch popup window to log in
     let width = 650, height = 500
     let left = (screen.width - width) / 2, top = (screen.height - height) / 2
     window.open('https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp','popUpWindow',
@@ -277,7 +280,6 @@ function addAssignment(catTitle, name, scorePts, totalPts) {
 // update assignment grade
 function updateAssignment(id, catTitle, fieldName, newVal) {
     let assign = categoriesMap[catTitle]['Assignments'].find(assignment => assignment['ID'] === id)
-    console.log(assign)
 
     // if assignment was ungraded before we need to update the category's score and total points
     if (!assign['Include']) {
@@ -309,6 +311,7 @@ function deleteAssignment(id, catTitle) {
                 categoriesMap[catTitle]['Total'] -= assign['Total'] * assign['Multiplier']
             }
             categoriesMap[catTitle]['Assignments'].remove(i)
+            break
         }
         i++
     }
@@ -320,7 +323,9 @@ function deleteAssignment(id, catTitle) {
 function refreshCategory(categoryName) {
     // recalculate category summary
     let category = categoriesMap[categoryName]
+    console.log('updated grade data:')
     console.log(categoriesMap)
+
     let catRow = document.getElementById(categoryName)
     catRow.children.item(2).innerHTML = category['Score'].toFixed(2)
     catRow.children.item(3).innerHTML = category['Total'].toFixed(2)
@@ -404,7 +409,6 @@ function createAssignmentRow(assignmentData, categoryTable, categoryTitle, userA
     let include_original = assignmentData['Include']
     resetButton.onclick = () => {
         let assign = categoriesMap[categoryTitle]['Assignments'].find(assignment => assignment['ID'] === assignmentData['ID'])
-        console.log(assign)
 
         // if assignment was ungraded before we need to revert the category's score and total points
         if (!include_original && assign['Include']) {
@@ -416,7 +420,8 @@ function createAssignmentRow(assignmentData, categoryTable, categoryTitle, userA
             categoriesMap[categoryTitle]['Total'] += (total_original - assign['Total']) * assign['Multiplier']
         }
         // update assignment grade
-        assign['Score'] = score_original; assign['Total'] = total_original
+        assign['Score'] = score_original
+        assign['Total'] = total_original
         // update row with original grade
         let assignRow = document.getElementById(assignmentData['ID'])
         assignRow.children.item(2).children.item(0).value = score_original

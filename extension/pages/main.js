@@ -1,6 +1,5 @@
 /*
 things to do:
-improve ui (change font/colors/padding)
 
 note: 1216 x 760 for web store screenshots
  */
@@ -25,20 +24,20 @@ document.getElementById('sem2').onclick = () => {
     }
 }
 
-let gradingPeriodJson
+let gradingPeriodsJson // json with all semesters
 fetch(main).then(r => r.json()).then(json => {
     // mark semester input depending on default value
     document.getElementById('sem1').checked = gpSelected === 1
     document.getElementById('sem2').checked = gpSelected !== 1
 
-    gradingPeriodJson = json[0]['terms']
+    gradingPeriodsJson = json[0]['terms']
     createHomeTable()
 
 }).catch(error => {
     console.log(error);
     console.log('sign in at https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp')
 
-    // popup window to log in
+    // auto launch popup window to log in
     let width = 650, height = 500
     let left = (screen.width - width) / 2, top = (screen.height - height) / 2
     window.open('https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp','popUpWindow',
@@ -54,7 +53,7 @@ fetch(main).then(r => r.json()).then(json => {
 
 // populate course table based on semester
 function createHomeTable() {
-    let gradingPeriod = gradingPeriodJson[gradingPeriods * gpSelected - 1]
+    let gradingPeriod = gradingPeriodsJson[gradingPeriods * gpSelected - 1]
     let courses = gradingPeriod['courses']
 
     let tableBody = document.getElementById('courses')

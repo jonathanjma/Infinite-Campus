@@ -3,6 +3,7 @@ let regex_result = window.location.search.match('n=(.*?)&data=(.*?)$') // get cl
 let className = regex_result[1].split('%20').join(' ')
 document.title = className + ' Grade History'
 categoriesData = JSON.parse(atob(regex_result[2])) // decode base64
+console.log('from url:')
 console.log(categoriesData)
 
 document.getElementById('back').onclick = () => { // back to class page button
@@ -59,17 +60,19 @@ function calcGrade(categories) {
 // starting with empty categories data, add assignments one by one chronologically and calculate grade
 let gradeHistory = []
 let graphLabels = []
+let consoleOut = []
 for (let assignment of assignmentList) {
     let category = newCategories[assignment['Category']]
     category['Score'] += assignment['Score'] * assignment['Multiplier']
     category['Total'] += assignment['Total'] * assignment['Multiplier']
-    // gradeHistory.push([assignment['Name'], calcGrade(newCategories)])
     gradeHistory.push(calcGrade(newCategories))
     graphLabels.push(assignment['Name'])
+    consoleOut.push([assignment['Name'], calcGrade(newCategories)])
 }
+console.log('after final iteration:')
 console.log(newCategories)
-console.log(graphLabels)
-console.log(gradeHistory)
+console.log('grade history:')
+console.log(consoleOut)
 
 // create graph using chart.js
 let ctx = document.getElementById('graph')
