@@ -1,3 +1,4 @@
+// graph page: shows grade trend graph
 
 let regex_result = window.location.search.match('n=(.*?)&data=(.*?)$') // get class name + graph data from url
 let className = regex_result[1].split('%20').join(' ')

@@ -1,32 +1,40 @@
-
-let production = true
-let coursesBase
+// class page: grade summary, assignments sorted by categories, add/update/delete/reset assignment scores
 
 let gpSelected = 1 // default semester (will be overwritten by url parameter if it exists)
 document.getElementById('back').onclick = () => { // back to home page button
     window.open('main.html', '_self')
 }
 
-if (production) {
-    coursesBase = 'https://fremontunifiedca.infinitecampus.org/campus/resources/portal/grades/detail/'
-    let regex_result = window.location.search.match('id=(.*?)&n=(.*?)&gp=(.*?)$') // get class id + name + semester from url
-    coursesBase += regex_result[1]
-    let className = regex_result[2].split('%20').join(' ')
-    document.getElementById('title').innerHTML = className
-    document.title = className
-    gpSelected = parseInt(regex_result[3])
-} else {
-    coursesBase = '../../test_data/band.json'
-}
+let categoriesMap = {} // all category and assignment data
 
-let categoriesMap = {}
 let summaryTable = document.getElementById('summary_T') // grade/category summary table
 let id_counter = 1 // to ensure all assignments have unique html element ids
 
 let gradeOriginalNumer = 0, gradeOriginalDenom = 0 // for % grade difference
 let graphData // cloned categoriesMap used to make grade history graph
 
-fetch(coursesBase).then(r => r.json()).then(json => {
+// get class id + name and current semester from url
+let regex_result = window.location.search.match('id=(.*?)&n=(.*?)&gp=(.*?)$')
+let classID = regex_result[1]
+let className = regex_result[2].split('%20').join(' ')
+document.getElementById('title').innerHTML = className
+document.title = className
+gpSelected = parseInt(regex_result[3])
+
+// get class page json data from background.js
+chrome.runtime.sendMessage({message: 'class_data', id: classID}, (json) => {
+    try {
+        pageAction(json)
+    } catch (error) {
+        console.log(error);
+        console.log('json response:')
+        console.log(json)
+        pageError()
+    }
+})
+
+// parse IC json, initial set up of html
+function pageAction(json) {
 
     // get all category json objects from infinite campus json
     let _classData = json['details']
@@ -234,10 +242,10 @@ fetch(coursesBase).then(r => r.json()).then(json => {
         // encode graph data in base64
         window.open(`graph.html?n=${document.title}&data=${btoa(JSON.stringify(graphData))}`, '_self')
     }
+}
 
-}).catch(error => {
-    // show error message if user is not logged in to IC
-    console.log(error)
+// if error occurs during parsing/set up (most likely user not logged in)
+function pageError() {
     console.log('sign in at https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp')
 
     // auto launch popup window to log in
@@ -251,7 +259,7 @@ fetch(coursesBase).then(r => r.json()).then(json => {
     document.getElementById('login').onclick = () => {
         window.open('https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp', '_blank')
     }
-})
+}
 
 // add assignment
 function addAssignment(catTitle, name, scorePts, totalPts) {

@@ -4,13 +4,12 @@ things to do:
 note: 1216 x 760 for web store screenshots
  */
 
-let main = 'https://fremontunifiedca.infinitecampus.org/campus/resources/portal/grades'
-// let main = '../../test_data/main.json'
+// home page: shows course table with links to course pages
 
 let gradingPeriods = 2 // # semesters
 let gpSelected = 1 // default semester
 
-// update course table when semester changed
+// when radio buttons clicked, update course table when semester changed
 document.getElementById('sem1').onclick = () => {
     if (gpSelected !== 1) {
         gpSelected = 1
@@ -25,16 +24,30 @@ document.getElementById('sem2').onclick = () => {
 }
 
 let gradingPeriodsJson // json with all semesters
-fetch(main).then(r => r.json()).then(json => {
+// get home page json data from background.js
+chrome.runtime.sendMessage({message: 'home_data'}, (json) => {
+    try {
+        pageAction(json)
+    } catch (error) {
+        console.log(error);
+        console.log('json response:')
+        console.log(json)
+        pageError()
+    }
+})
+
+// set up courses table
+function pageAction(json) {
     // mark semester input depending on default value
     document.getElementById('sem1').checked = gpSelected === 1
     document.getElementById('sem2').checked = gpSelected !== 1
 
     gradingPeriodsJson = json[0]['terms']
     createHomeTable()
+}
 
-}).catch(error => {
-    console.log(error);
+// if error occurs during parsing/set up (most likely user not logged in)
+function pageError() {
     console.log('sign in at https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp')
 
     // auto launch popup window to log in
@@ -49,7 +62,7 @@ fetch(main).then(r => r.json()).then(json => {
     document.getElementById('login').onclick = () => {
         window.open('https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp', '_blank')
     }
-})
+}
 
 // populate course table based on semester
 function createHomeTable() {
