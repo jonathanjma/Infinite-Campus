@@ -17,7 +17,6 @@ chrome.runtime.onMessage.addListener(
         } else if (request.message === 'class_data') {
             let coursesBase = 'https://fremontunifiedca.infinitecampus.org/campus/resources/portal/grades/detail/'
                 + request.id + '?nocache=' + Date.now()
-            console.log(coursesBase)
             fetch(coursesBase).then(r => r.json()).then(json => {
                 sendResponse(json)
                 console.log(json)

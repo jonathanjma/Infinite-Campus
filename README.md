@@ -22,6 +22,8 @@ Usage:
 6. Clicking on the "Grade History Graph" opens a graph showing how your grade has changed during the semester
 7. Enjoy!
 
+Open Source libraries used: Chart.js and Water.css
+
 Note: Calculated grades may be off by at most 0.01% due to rounding errors
 
 For any bugs or feature requests, do not hesitate to email appdev.micro@gmail.com or open an issue on GitHub with a detailed description of the issue/feature.
