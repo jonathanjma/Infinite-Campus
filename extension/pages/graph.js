@@ -1,15 +1,9 @@
 // graph page: shows grade trend graph
-
-let regex_result = window.location.search.match('n=(.*?)&data=(.*?)$') // get class name + graph data from url
-let className = regex_result[1].split('%20').join(' ')
-document.title = className + ' Grade History'
-categoriesData = JSON.parse(atob(regex_result[2])) // decode base64
+function loadGraph(graphData) {
+categoriesData = JSON.parse(atob(graphData)) // decode base64
 console.log('from url:')
 console.log(categoriesData)
 
-document.getElementById('back').onclick = () => { // back to class page button
-    history.back()
-}
 
 // create empty categories data, build all assignments list
 let assignmentList = []
@@ -88,7 +82,7 @@ let chart = new Chart(ctx, {
     data: {
         labels: graphLabels,
         datasets: [{
-            label: className + ' Grade History',
+            label: className + 'Grade History',
             data: gradeHistory,
             borderColor: 'rgb(75, 192, 192)',
             segment: {
@@ -124,7 +118,7 @@ let chart = new Chart(ctx, {
         plugins: {
             title: {
                 display: true,
-                text: className + ' Grade History',
+                text: 'Grade History',
                 font: {
                     size: 30
                 }
@@ -139,3 +133,4 @@ let chart = new Chart(ctx, {
         radius: 0,
     },
 })
+}

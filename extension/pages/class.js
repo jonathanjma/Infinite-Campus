@@ -238,10 +238,7 @@ function pageAction(json) {
 
     // create deep clone so that user added assignments not included
     graphData = JSON.parse(JSON.stringify(categoriesMap))
-    document.getElementById('graph').onclick = () => { // open graph button
-        // encode graph data in base64
-        window.open(`graph.html?n=${document.title}&data=${btoa(JSON.stringify(graphData))}`, '_self')
-    }
+    loadGraph(btoa(JSON.stringify(graphData)));
 }
 
 // if error occurs during parsing/set up (most likely user not logged in)

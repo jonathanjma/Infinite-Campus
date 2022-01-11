@@ -49,6 +49,11 @@
     </div>
 
     <div id="summary_addAssign">
+        <h2 style="margin-bottom: 10px">Graph</h2>
+        <div id="graph_div">
+            <canvas id="graph" ></canvas>
+        </div>
+        
         <h2 style="margin-bottom: 10px">Summary</h2>
         <table>
             <thead>
@@ -63,7 +68,7 @@
             </thead>
             <tbody id="summary_T"></tbody>
         </table>
-        <button id="graph" style="padding: 10px 15px">Grade History Graph</button>
+
         <br>
 
         <h2>Add Assignment</h2>
@@ -90,5 +95,7 @@
     </div>
 
     <script src="class.js"></script>
+    <script src="../chart.js"></script>
+    <script src="graph.js"></script>
 </body>
 </html>
