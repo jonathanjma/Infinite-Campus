@@ -16,16 +16,18 @@ let assignmentList = []
 let newCategories = {}
 let pointsBased = false
 for (let catName in categoriesData) {
-    pointsBased = categoriesData[catName]['Points Based']
-    newCategories[catName] = {
-        'Score': 0,
-        'Total': 0,
-        'Weight': categoriesData[catName]['Weight'],
-    }
-    for (let assign of categoriesData[catName]['Assignments']) {
-        if (assign['Include']) {
-            assign['Category'] = catName
-            assignmentList.push(assign)
+    if (!categoriesData[catName]['Excluded']) { // don't include excluded category assignments
+        pointsBased = categoriesData[catName]['Points Based']
+        newCategories[catName] = {
+            'Score': 0,
+            'Total': 0,
+            'Weight': categoriesData[catName]['Weight'],
+        }
+        for (let assign of categoriesData[catName]['Assignments']) {
+            if (assign['Include']) {
+                assign['Category'] = catName
+                assignmentList.push(assign)
+            }
         }
     }
 }

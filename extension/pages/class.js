@@ -33,6 +33,10 @@ chrome.runtime.sendMessage({message: 'class_data', id: classID}, (json) => {
     }
 })
 
+// manual test file debug (use localhost mode)
+// fetch('../../test_data/band_exclude_test_cat.json').then(r => r.json()).then(json => {pageAction(json)})
+// .catch(error => {console.log(error); pageError()})
+
 // parse IC json, initial set up of html
 function pageAction(json) {
 
@@ -65,6 +69,7 @@ function pageAction(json) {
 
     // build categories map from IC json with assignments, point totals, etc. for each category
     let progressObj = {}
+    let pointsBased = false // if class is points based (no weighted categories)
     console.log('raw IC categories:')
     for (let _categoryObj of _categoryObjects) {
         for (let _category of _categoryObj) {
@@ -107,8 +112,11 @@ function pageAction(json) {
                     'Original Score': scorePts,
                     'Original Total': totalPts,
                     'Weight': _category['weight'] * 0.01,
+                    'Points Based': !_category['isWeighted'],
+                    'Excluded': _category['isExcluded'],
                     'Assignments': catAssignmentsData,
                 }
+                pointsBased = !_category['isWeighted']
             } else {
                 categoriesMap[catName]['Assignments'] = categoriesMap[catName]['Assignments'].concat(catAssignmentsData)
                 categoriesMap[catName]['Score'] += scorePts
@@ -129,7 +137,6 @@ function pageAction(json) {
     console.log(categoriesMap)
     // console.log(progressObj)
 
-    let pointsBased = false // if class is points based (no weighted categories)
     let weightTotal = 0
     let runningScore = 0, runningTotal = 0
 
@@ -179,21 +186,26 @@ function pageAction(json) {
         /////
 
         // Build final grade using category point totals
-        pointsBased = category['Weight'] === 0
-        if (!pointsBased) { // regular grade with weighed categories
-            runningTotal += (category['Score'] / category['Total']) * category['Weight']
-            weightTotal += category['Weight'] // needed if categories have no assignments
-        } else { // grade with no weighted categories
-            runningScore += category['Score']
-            runningTotal += category['Total']
+        let weightText
+        if (!category['Excluded']) { // ignore excluded categories
+            if (!pointsBased) { // regular grade with weighed categories
+                runningTotal += (category['Score'] / category['Total']) * category['Weight']
+                weightTotal += category['Weight'] // needed if categories have no assignments
+                weightText = category['Weight'] * 100
+            } else { // grade with no weighted categories
+                runningScore += category['Score']
+                runningTotal += category['Total']
+                weightText = '-'
+            }
+        } else {
+            weightText = '0'
         }
-        category['Points Based'] = pointsBased
 
         // overall category stats at top of page
         let catSumRow = summaryTable.insertRow(-1)
         catSumRow.id = catName // category name = id of overall stat row
         catSumRow.insertCell(0).innerHTML = catName
-        catSumRow.insertCell(1).innerHTML = (!pointsBased ? category['Weight']*100 : '-') + '%'
+        catSumRow.insertCell(1).innerHTML = weightText + '%'
         catSumRow.insertCell(2).innerHTML = category['Score'].toFixed(2)
         catSumRow.insertCell(3).innerHTML = category['Total'].toFixed(2)
         catSumRow.insertCell(4).innerHTML =
@@ -337,38 +349,48 @@ function refreshCategory(categoryName) {
     let catRow = document.getElementById(categoryName)
     catRow.children.item(2).innerHTML = category['Score'].toFixed(2)
     catRow.children.item(3).innerHTML = category['Total'].toFixed(2)
-    catRow.children.item(4).innerHTML =
-        ((category['Score'] / category['Total']) * 100).toFixed(2) + '%'
-    let catPercentDiff =
-        ((category['Score'] / category['Total'] - category['Original Score'] / category['Original Total']) * 100).toFixed(2)
-    catRow.children.item(5).innerHTML = catPercentDiff + '%'
-    catRow.children.item(5).style.color = getDiffColor(catPercentDiff) // green if +, red -, black 0
+    let categoryPercent = (category['Score'] / category['Total']) * 100
+    catRow.children.item(4).innerHTML = (!isNaN(categoryPercent) ? categoryPercent.toFixed(2) : 0) + '%'
+    // ^ NaN will be shown if both score and total is 0, so replace it with 0
+
+    let catPercentDiff = (category['Score'] / category['Total'] - category['Original Score'] / category['Original Total']) * 100
+    if (isNaN(categoryPercent)) { // score and total will be 0 -> NaN if all assignments removed
+        catPercentDiff = -(category['Original Score'] / category['Original Total']) * 100
+    }
+    catRow.children.item(5).innerHTML = catPercentDiff.toFixed(2) + '%'
+    catRow.children.item(5).style.color = getDiffColor(catPercentDiff.toFixed(2)) // green if +, red -, black 0
 
     // recalculate current grade
     let runningScore = 0, runningTotal = 0
     let weightTotal = 0
     for (let catName in categoriesMap) {
         category = categoriesMap[catName]
-        if (!category['Points Based']) {
-            // categories must have at more than 0 total points
-            // idk what happens if weighted category only has ec (ex. 10/0)
-            if (category['Total'] !== 0) {
-                runningTotal += (category['Score'] / category['Total']) * category['Weight']
-                weightTotal += category['Weight']
+        if (!category['Excluded']) { // ignore excluded categories
+            if (!category['Points Based']) {
+                // categories must have at more than 0 total points
+                // idk what happens if weighted category only has ec (ex. 10/0)
+                if (category['Total'] !== 0) {
+                    runningTotal += (category['Score'] / category['Total']) * category['Weight']
+                    weightTotal += category['Weight']
+                }
+            } else {
+                runningScore += category['Score']
+                runningTotal += category['Total']
             }
-        } else {
-            runningScore += category['Score']
-            runningTotal += category['Total']
         }
     }
     let gradeSumRow = document.getElementById('current_grade')
     let gradeNumer = !category['Points Based'] ? runningTotal : runningScore
     let gradeDenom = !category['Points Based'] ? weightTotal : runningTotal
-    gradeSumRow.children.item(4).innerHTML =
-        ((gradeNumer / gradeDenom) * 100).toFixed(2) + '%'
-    let gradePercentDiff = ((gradeNumer / gradeDenom - gradeOriginalNumer / gradeOriginalDenom) * 100).toFixed(2)
-    gradeSumRow.children.item(5).innerHTML = gradePercentDiff + '%'
-    gradeSumRow.children.item(5).style.color = getDiffColor(gradePercentDiff)
+    let gradePercent = (gradeNumer / gradeDenom) * 100
+    gradeSumRow.children.item(4).innerHTML = (!isNaN(gradePercent) ? gradePercent.toFixed(2) : 0) + '%'
+
+    let gradePercentDiff = (gradeNumer / gradeDenom - gradeOriginalNumer / gradeOriginalDenom) * 100
+    if (isNaN(gradePercentDiff)) {
+        gradePercentDiff = -(gradeOriginalNumer / gradeOriginalDenom) * 100
+    }
+    gradeSumRow.children.item(5).innerHTML = gradePercentDiff.toFixed(2) + '%'
+    gradeSumRow.children.item(5).style.color = getDiffColor(gradePercentDiff.toFixed(2))
 }
 
 // create assignment grade inputs
