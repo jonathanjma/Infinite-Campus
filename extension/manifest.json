@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Infinite Campus Grades++",
   "description": "Alternative Version of FUSD Infinite Campus (with grade simulation)",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "browser_action": {
     "default_popup": "popup/popup.html",
     "default_icon": "icon.png"

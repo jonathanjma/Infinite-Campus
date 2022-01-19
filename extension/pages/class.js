@@ -1,6 +1,8 @@
 // class page: grade summary, assignments sorted by categories, add/update/delete/reset assignment scores
 
 let gpSelected = 1 // default semester (will be overwritten by url parameter if it exists)
+let gpConfig = [['Q1', 'Q2'], ['Q3', 'Q4']] // define semesters (group combined grading periods)
+
 document.getElementById('back').onclick = () => { // back to home page button
     window.open('main.html', '_self')
 }
@@ -20,6 +22,10 @@ let className = regex_result[2].split('%20').join(' ')
 document.getElementById('title').innerHTML = className
 document.title = className
 gpSelected = parseInt(regex_result[3])
+
+// select correct grading period group depending on semester
+let gpIncluded = gpConfig[gpSelected - 1];
+console.log('grading periods: ' + gpIncluded)
 
 // get class page json data from background.js
 chrome.runtime.sendMessage({message: 'class_data', id: classID}, (json) => {
@@ -44,25 +50,10 @@ function pageAction(json) {
     let _classData = json['details']
     let _categoryObjects = []
 
-    let quarterCount = 0
     for (let _dataEntry of _classData) {
-        if (_dataEntry['categories'].length > 0) {
+        // only add non-empty category/assignment data in current semester
+        if (_dataEntry['categories'].length > 0 && gpIncluded.indexOf(_dataEntry['task']['termName']) !== -1) {
             _categoryObjects.push(_dataEntry['categories'])
-        }
-        // use 'quarter grade' since only quarter entries contain assignments
-        if (_dataEntry['task']['taskName'] === 'Quarter Grade') {
-            quarterCount++
-            // exit when quarter count equals desired semester (*2 to convert to quarters)
-            if (quarterCount === gpSelected*2) {
-                break
-            }
-            // if desired semester not reached and quarter count is even:
-                // reset assignments
-            // if desired semester not reached and quarter count is odd:
-                // don't reset since quarter is q1 or q3, and we need those assignments
-            else if (quarterCount % 2 !== 1) {
-                _categoryObjects = []
-            }
         }
     }
     // console.log(_categoryObjects)
@@ -208,8 +199,8 @@ function pageAction(json) {
         catSumRow.insertCell(1).innerHTML = weightText + '%'
         catSumRow.insertCell(2).innerHTML = category['Score'].toFixed(2)
         catSumRow.insertCell(3).innerHTML = category['Total'].toFixed(2)
-        catSumRow.insertCell(4).innerHTML =
-            ((category['Score'] / category['Total']) * 100).toFixed(2) + '%'
+        let catPercent = (category['Score'] / category['Total']) * 100
+        catSumRow.insertCell(4).innerHTML = (!isNaN(catPercent) ? catPercent.toFixed(2) : 0) + '%'
         catSumRow.insertCell(5).innerHTML = '0.00%'
     }
 
@@ -222,8 +213,8 @@ function pageAction(json) {
     gradeSumRow.insertCell(3).innerHTML = ''
     gradeOriginalNumer = !pointsBased ? runningTotal : runningScore
     gradeOriginalDenom = !pointsBased ? weightTotal : runningTotal
-    gradeSumRow.insertCell(4).innerHTML =
-        ((gradeOriginalNumer / gradeOriginalDenom) * 100).toFixed(2) + '%'
+    let gradePercent = (gradeOriginalNumer / gradeOriginalDenom) * 100
+    gradeSumRow.insertCell(4).innerHTML = (!isNaN(gradePercent) ? gradePercent.toFixed(2) : '-') + '%'
     gradeSumRow.insertCell(5).innerHTML = '0.00%'
 
     // populate new assignment category dropdown menu

@@ -1,5 +1,11 @@
 /*
 things to do:
+remove "duplicate" grade calc code in class.js
+move trend graph to home or class page (also make it collapsible)
+
+lowest score to maintain certain grade % calculator (use water.css dialog element)
+show unread IC notifications for grade updates on home page
+    could also implement browser notifications by fetching every 5 min
 
 note: 1216 x 760 for web store screenshots
  */
