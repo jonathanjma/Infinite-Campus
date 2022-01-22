@@ -3,7 +3,8 @@
 let gpSelected = 1 // default semester (will be overwritten by url parameter if it exists)
 let gpConfig = [['Q1', 'Q2'], ['Q3', 'Q4']] // define semesters (group combined grading periods)
 
-document.getElementById('back').onclick = () => { // back to home page button
+// back to home page button
+document.getElementById('back').onclick = () => {
     window.open('main.html', '_self')
 }
 
@@ -13,7 +14,7 @@ let summaryTable = document.getElementById('summary_T') // grade/category summar
 let id_counter = 1 // to ensure all assignments have unique html element ids
 
 let gradeOriginalNumer = 0, gradeOriginalDenom = 0 // for % grade difference
-let graphData // cloned categoriesMap used to make grade history graph
+let deepClone // cloned categoriesMap without user-added assignments
 
 // get class id + name and current semester from url
 let regex_result = window.location.search.match('id=(.*?)&n=(.*?)&gp=(.*?)$')
@@ -128,9 +129,7 @@ function pageAction(json) {
     console.log(categoriesMap)
     // console.log(progressObj)
 
-    let weightTotal = 0
-    let runningScore = 0, runningTotal = 0
-
+    // set up html elements for each category + summary info
     for (let catName in categoriesMap) {
         let category = categoriesMap[catName]
 
@@ -138,21 +137,23 @@ function pageAction(json) {
         if (category['Score'] !== progressObj[catName][0] && category['Total'] !== progressObj[catName][1]) {
             let unpubScore = progressObj[catName][0] - category['Score']
             let unpubTotal = progressObj[catName][1] - category['Total']
-            let data = {
-                'ID': id_counter,
-                'Name': 'Unpublished Assignments',
-                'Due Date': (new Date).toISOString(), // time right now
-                'Score': unpubScore,
-                'Total': unpubTotal,
-                'Include': true,
-                'Comments': null,
-                'Multiplier': 1,
+            if (unpubScore > 0.01 && unpubTotal > 0.01) { // not caused by rounding error
+                let data = {
+                    'ID': id_counter,
+                    'Name': 'Unpublished Assignments',
+                    'Due Date': (new Date).toISOString(), // time right now
+                    'Score': unpubScore,
+                    'Total': unpubTotal,
+                    'Include': true,
+                    'Comments': null,
+                    'Multiplier': 1,
+                }
+                category['Assignments'].push(data)
+                // update point totals
+                category['Score'] += unpubScore; category['Total'] += unpubTotal
+                category['Original Score'] += unpubScore; category['Original Total'] += unpubTotal
+                id_counter++
             }
-            category['Assignments'].push(data)
-            // update point totals
-            category['Score'] += unpubScore; category['Total'] += unpubTotal
-            category['Original Score'] += unpubScore; category['Original Total'] += unpubTotal
-            id_counter++
         }
 
         // create collapsable html element for category assignment table
@@ -166,7 +167,7 @@ function pageAction(json) {
 
         // create assignment table
         let catTable = document.createElement('table')
-        catTable.id = catName + '_T' // category name_T = if of category table
+        catTable.id = catName + '_T' // category name_T = id of category table
         catTable.style.paddingLeft = '20px'
         for (let assignment of category['Assignments']) {
             createAssignmentRow(assignment, catTable, catName, false)
@@ -174,63 +175,65 @@ function pageAction(json) {
         catParent.appendChild(catTable)
         document.body.append(catParent)
         document.body.append(document.createElement('br'))
-        /////
 
-        // Build final grade using category point totals
-        let weightText
-        if (!category['Excluded']) { // ignore excluded categories
-            if (!pointsBased) { // regular grade with weighed categories
-                runningTotal += (category['Score'] / category['Total']) * category['Weight']
-                weightTotal += category['Weight'] // needed if categories have no assignments
-                weightText = category['Weight'] * 100
-            } else { // grade with no weighted categories
-                runningScore += category['Score']
-                runningTotal += category['Total']
-                weightText = '-'
-            }
-        } else {
-            weightText = '0'
+        let weightText // how the weight of each category is shown in summary table
+        if (category['Excluded']) {
+            weightText = 0
+        } else if (!pointsBased) { // weighed categories
+            weightText = category['Weight'] * 100
+        } else { // no weighted categories
+            weightText = '-'
         }
 
-        // overall category stats at top of page
+        // output overall category stats into summary table
         let catSumRow = summaryTable.insertRow(-1)
         catSumRow.id = catName // category name = id of overall stat row
         catSumRow.insertCell(0).innerHTML = catName
         catSumRow.insertCell(1).innerHTML = weightText + '%'
         catSumRow.insertCell(2).innerHTML = category['Score'].toFixed(2)
         catSumRow.insertCell(3).innerHTML = category['Total'].toFixed(2)
-        let catPercent = (category['Score'] / category['Total']) * 100
-        catSumRow.insertCell(4).innerHTML = (!isNaN(catPercent) ? catPercent.toFixed(2) : 0) + '%'
+        catSumRow.insertCell(4).innerHTML =
+            fixNan(category['Score'] / category['Total'] * 100, 0).toFixed(2) + '%'
         catSumRow.insertCell(5).innerHTML = '0.00%'
     }
 
-    // output final grade
+    // output final grade into summary table
     let gradeSumRow = summaryTable.insertRow(-1)
     gradeSumRow.id = 'current_grade'
     gradeSumRow.insertCell(0).innerHTML = 'Current Grade'
     gradeSumRow.insertCell(1).innerHTML = ''
     gradeSumRow.insertCell(2).innerHTML = ''
     gradeSumRow.insertCell(3).innerHTML = ''
-    gradeOriginalNumer = !pointsBased ? runningTotal : runningScore
-    gradeOriginalDenom = !pointsBased ? weightTotal : runningTotal
-    let gradePercent = (gradeOriginalNumer / gradeOriginalDenom) * 100
-    gradeSumRow.insertCell(4).innerHTML = (!isNaN(gradePercent) ? gradePercent.toFixed(2) : '-') + '%'
+
+    let initialGradeData = calculateGrade(categoriesMap)
+    gradeOriginalNumer = initialGradeData[1]
+    gradeOriginalDenom = initialGradeData[2]
+    gradeSumRow.insertCell(4).innerHTML = (initialGradeData[0] * 100).toFixed(2) + '%'
     gradeSumRow.insertCell(5).innerHTML = '0.00%'
 
-    // populate new assignment category dropdown menu
+    // (end of initial grade setup) //////////////////////////////////////////////////////////////////////////////////
+
+    // create deep clone of initial category data so that user added assignments not included
+    deepClone = JSON.parse(JSON.stringify(categoriesMap))
+
+    // populate assignment category dropdown menus
     let catDropdown = document.getElementById('catDropdown')
+    let catDropdownL = document.getElementById('catDropdown2')
     Object.keys(categoriesMap).forEach((key) => {
-        let option = document.createElement("option")
-        option.text = key
+        let option = document.createElement("option"); option.text = key
+        let option2 = document.createElement("option"); option2.text = key
         catDropdown.add(option)
+        catDropdownL.add(option2)
     })
-    // when user submits new assignment
+
+    // when user submits new assignment info
     document.getElementById('assignSubmit').onclick = () => {
         let name = document.getElementById('assignName')
         let score = document.getElementById('assignScore')
         let total = document.getElementById('assignTotal')
-        // make sure all are fields filled out
-        if (catDropdown.selectedIndex !== 0 && name.value.length > 0 && score.value.length > 0 && total.value.length > 0) {
+        // make sure all are fields filled out, scores not negative
+        if (catDropdown.selectedIndex !== 0 && name.value.length > 0 && score.value.length > 0 && total.value.length > 0
+            && score.value >= 0 && total.value >= 0) {
             addAssignment(catDropdown.value, name.value, parseFloat(score.value), parseFloat(total.value))
             catDropdown.selectedIndex = 0 // reset dropdown + input boxes
             name.value = ''
@@ -239,11 +242,53 @@ function pageAction(json) {
         }
     }
 
-    // create deep clone so that user added assignments not included
-    graphData = JSON.parse(JSON.stringify(categoriesMap))
-    document.getElementById('graph').onclick = () => { // open graph button
+    // when user submits lowest grade info
+        let total = document.getElementById('lowestTotal')
+        let grade = document.getElementById('lowestGrade')
+        let output = document.getElementById('lowestResult')
+        catDropdownL.selectedIndex = 1; total.value = 50; grade.value = 90
+    document.getElementById('lowestSubmit').onclick = () => {
+        let lowestScore;
+        let lowestGrade = parseFloat(grade.value)
+        if (catDropdownL.selectedIndex !== 0 && total.value.length > 0 && grade.value.length > 0
+            && total.value >= 0 && grade.value >= 0) {
+
+            if (pointsBased) {
+                // score = lowest grade * (current total + assign total) - current score total
+                lowestScore =
+                    (lowestGrade / 100 * (gradeOriginalDenom + parseFloat(total.value)) - gradeOriginalNumer).toFixed(2)
+            } else {
+                let aocrtData = JSON.parse(JSON.stringify(deepClone))
+                delete aocrtData[catDropdownL.value] // delete category we are currently simulating
+                let catData = JSON.parse(JSON.stringify(deepClone[catDropdownL.value]))
+                let aocrtGradeData = calculateGrade(aocrtData)
+                let aocrt = aocrtGradeData[0] * aocrtGradeData[2]
+
+                // console.log([lowestGrade / 100, gradeOriginalDenom, aocrt, catData['Weight'],
+                //     catData['Total'], parseFloat(total.value), catData['Score']])
+
+                // score = ((lowest grade * weight total - all other category running total) / category weight)
+                //         (category total + assign total) - category score total
+                lowestScore =
+                    (((lowestGrade / 100 * gradeOriginalDenom - aocrt) / catData['Weight'])
+                        * (catData['Total'] + parseFloat(total.value)) - catData['Score']).toFixed(2)
+            }
+            // output lowest grade message
+            let message
+            if (lowestScore >= 0) {
+                let lowestPercent = fixNan(lowestScore / total.value * 100, 0).toFixed(2)
+                message = `To maintain a <b>${lowestGrade}%</b>, you must score ≥ ${lowestScore}/${total.value} <b>(${lowestPercent}%)</b>`
+            } else {
+                message = `Even if you took a <b>0</b>, your grade still would be > <b>${lowestGrade}%</b>`
+            }
+            output.innerHTML = message
+        }
+    }
+
+    // open graph button
+    document.getElementById('graph').onclick = () => {
         // encode graph data in base64
-        window.open(`graph.html?n=${document.title}&data=${btoa(JSON.stringify(graphData))}`, '_self')
+        window.open(`graph.html?n=${document.title}&data=${btoa(JSON.stringify(deepClone))}`, '_self')
     }
 }
 
@@ -340,28 +385,44 @@ function refreshCategory(categoryName) {
     let catRow = document.getElementById(categoryName)
     catRow.children.item(2).innerHTML = category['Score'].toFixed(2)
     catRow.children.item(3).innerHTML = category['Total'].toFixed(2)
-    let categoryPercent = (category['Score'] / category['Total']) * 100
-    catRow.children.item(4).innerHTML = (!isNaN(categoryPercent) ? categoryPercent.toFixed(2) : 0) + '%'
+    catRow.children.item(4).innerHTML =
+        fixNan(category['Score'] / category['Total'] * 100, 0).toFixed(2) + '%'
     // ^ NaN will be shown if both score and total is 0, so replace it with 0
 
     let catPercentDiff = (category['Score'] / category['Total'] - category['Original Score'] / category['Original Total']) * 100
-    if (isNaN(categoryPercent)) { // score and total will be 0 -> NaN if all assignments removed
+    if (isNaN(catPercentDiff)) { // score and total will be 0 -> NaN if all assignments removed
         catPercentDiff = -(category['Original Score'] / category['Original Total']) * 100
     }
     catRow.children.item(5).innerHTML = catPercentDiff.toFixed(2) + '%'
     catRow.children.item(5).style.color = getDiffColor(catPercentDiff.toFixed(2)) // green if +, red -, black 0
 
     // recalculate current grade
+    let gradeSumRow = document.getElementById('current_grade')
+    let gradeData = calculateGrade(categoriesMap)
+    gradeSumRow.children.item(4).innerHTML = fixNan(gradeData[0] * 100, 0).toFixed(2) + '%'
+
+    let gradePercentDiff = (gradeData[1] / gradeData[2] - gradeOriginalNumer / gradeOriginalDenom) * 100
+    if (isNaN(gradePercentDiff)) {
+        gradePercentDiff = -(gradeOriginalNumer / gradeOriginalDenom) * 100
+    }
+    gradeSumRow.children.item(5).innerHTML = gradePercentDiff.toFixed(2) + '%'
+    gradeSumRow.children.item(5).style.color = getDiffColor(gradePercentDiff.toFixed(2))
+}
+
+// calculate grade
+function calculateGrade(categoriesData) {
     let runningScore = 0, runningTotal = 0
     let weightTotal = 0
-    for (let catName in categoriesMap) {
-        category = categoriesMap[catName]
+    let pointsBased = false
+    for (let catName in categoriesData) {
+        let category = categoriesData[catName]
         if (!category['Excluded']) { // ignore excluded categories
+            pointsBased = category['Points Based']
             if (!category['Points Based']) {
                 // categories must have at more than 0 total points
                 // idk what happens if weighted category only has ec (ex. 10/0)
                 if (category['Total'] !== 0) {
-                    runningTotal += (category['Score'] / category['Total']) * category['Weight']
+                    runningTotal += category['Score'] / category['Total'] * category['Weight']
                     weightTotal += category['Weight']
                 }
             } else {
@@ -370,18 +431,10 @@ function refreshCategory(categoryName) {
             }
         }
     }
-    let gradeSumRow = document.getElementById('current_grade')
-    let gradeNumer = !category['Points Based'] ? runningTotal : runningScore
-    let gradeDenom = !category['Points Based'] ? weightTotal : runningTotal
-    let gradePercent = (gradeNumer / gradeDenom) * 100
-    gradeSumRow.children.item(4).innerHTML = (!isNaN(gradePercent) ? gradePercent.toFixed(2) : 0) + '%'
-
-    let gradePercentDiff = (gradeNumer / gradeDenom - gradeOriginalNumer / gradeOriginalDenom) * 100
-    if (isNaN(gradePercentDiff)) {
-        gradePercentDiff = -(gradeOriginalNumer / gradeOriginalDenom) * 100
-    }
-    gradeSumRow.children.item(5).innerHTML = gradePercentDiff.toFixed(2) + '%'
-    gradeSumRow.children.item(5).style.color = getDiffColor(gradePercentDiff.toFixed(2))
+    let gradeNumer = !pointsBased ? runningTotal : runningScore
+    let gradeDenom = !pointsBased ? weightTotal : runningTotal
+    let grade = fixNan(gradeNumer / gradeDenom, 0)
+    return [grade, gradeNumer, gradeDenom]
 }
 
 // create assignment grade inputs
@@ -478,4 +531,9 @@ function getDiffColor(num) {
     } else {
         return 'initial'
     }
+}
+
+// if number is NaN, replace it with specified string
+function fixNan(input, replacement) {
+    return isNaN(input) ? replacement : input;
 }
