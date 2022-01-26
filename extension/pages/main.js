@@ -4,7 +4,7 @@ show unread IC notifications for grade updates on home page
     (https://github.com/codingmarket07/Notification-Dropdown-Nov19)
     could also implement browser notifications by fetching every 5 min
 
-about page
+about/help page
 'settings' page for non-fusd?
 
 note: 1216 x 760 for web store screenshots
@@ -13,7 +13,7 @@ note: 1216 x 760 for web store screenshots
 // home page: shows course table with links to course pages
 
 let gradingPeriods = 2 // # semesters
-let gpSelected = 1 // default semester
+let gpSelected = 2 // default semester
 
 // when radio buttons clicked, update course table when semester changed
 document.getElementById('sem1').onclick = () => {

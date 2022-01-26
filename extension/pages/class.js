@@ -1,7 +1,7 @@
-// class page: grade summary, assignments sorted by categories, add/update/delete/reset assignment scores
+// class page: grade summary, assignments sorted by categories, grade simulation, lowest grade calculator, grade trend graph
 
-let gpSelected = 1 // default semester (will be overwritten by url parameter if it exists)
 let gpConfig = [['Q1', 'Q2'], ['Q3', 'Q4']] // define semesters (group combined grading periods)
+let gpSelected = 2 // default semester (will be overwritten by url parameter if it exists)
 let gpIncluded = gpConfig[gpSelected - 1];
 
 // back to home page button
@@ -9,7 +9,8 @@ document.getElementById('back').onclick = () => {
     window.open('main.html', '_self')
 }
 
-let categoriesMap = {} // all category and assignment data
+// all category and assignment data
+let categoriesMap = {}
 
 let summaryTable = document.getElementById('summary_T') // grade/category summary table
 let id_counter = 1 // to ensure all assignments have unique html element ids
@@ -243,7 +244,7 @@ function pageAction(json) {
         }
     }
 
-    // when user uses lowest grade calculator
+    // update lowest grade calculator live as user enters data
     let total = document.getElementById('lowestTotal')
     let grade = document.getElementById('lowestGrade')
     catDropdownL.oninput = lowestGradeCalc
@@ -254,37 +255,37 @@ function pageAction(json) {
         let output = document.getElementById('lowestResult')
 
         let lowestScore;
-        let lowestGrade = parseFloat(grade.value)
+        let lowestGrade = parseFloat(grade.value) / 100
         if (catDropdownL.selectedIndex !== 0 && total.value.length > 0 && grade.value.length > 0
             && total.value >= 0 && grade.value >= 0) {
 
             if (pointsBased) {
                 // score = lowest grade * (current total + assign total) - current score total
                 lowestScore =
-                    (lowestGrade / 100 * (gradeOriginalDenom + parseFloat(total.value)) - gradeOriginalNumer).toFixed(2)
+                    (lowestGrade * (gradeOriginalDenom + parseFloat(total.value)) - gradeOriginalNumer).toFixed(2)
             } else {
                 let aocrtData = JSON.parse(JSON.stringify(deepClone))
                 delete aocrtData[catDropdownL.value] // delete category we are currently simulating
                 let catData = JSON.parse(JSON.stringify(deepClone[catDropdownL.value]))
                 let aocrtGradeData = calculateGrade(aocrtData)
-                let aocrt = aocrtGradeData[0] * aocrtGradeData[2]
+                let aocrt = aocrtGradeData[0] * aocrtGradeData[2] // disregard weight total in aocrt data
 
-                // console.log([lowestGrade / 100, gradeOriginalDenom, aocrt, catData['Weight'],
+                // console.log([lowestGrade, gradeOriginalDenom, aocrt, catData['Weight'],
                 //     catData['Total'], parseFloat(total.value), catData['Score']])
 
                 // score = ((lowest grade * weight total - all other category running total) / category weight)
                 //         (category total + assign total) - category score total
                 lowestScore =
-                    (((lowestGrade / 100 * gradeOriginalDenom - aocrt) / catData['Weight'])
+                    (((lowestGrade * gradeOriginalDenom - aocrt) / catData['Weight'])
                         * (catData['Total'] + parseFloat(total.value)) - catData['Score']).toFixed(2)
             }
             // output lowest grade message
             let message
             if (lowestScore >= 0) {
                 let lowestPercent = fixNan(lowestScore / total.value * 100, 0).toFixed(2)
-                message = `To maintain a <b>${lowestGrade}%</b>, you must score ≥ ${lowestScore}/${total.value} <b>(${lowestPercent}%)</b>`
+                message = `To maintain a <b>${lowestGrade*100}%</b>, you must score ≥ ${lowestScore}/${total.value} <b>(${lowestPercent}%)</b>`
             } else {
-                message = `Even if you got a <b>0</b>, your grade still would be > <b>${lowestGrade}%</b>`
+                message = `Even if you got a <b>0</b>, your grade still would be > <b>${lowestGrade*100}%</b>`
             }
             output.innerHTML = message
         }
@@ -292,6 +293,15 @@ function pageAction(json) {
 
     // render graph
     loadGraph(btoa(JSON.stringify(deepClone)));
+
+    // setup tabs
+    let tabBtns = document.getElementsByClassName('tablinks')
+    for (let tab of tabBtns) {
+        tab.onclick = () => {
+            openTab(tab.id + 'Tab')
+        }
+    }
+    openTab('addAssignTab')
 }
 
 // if error occurs during parsing/set up (most likely user not logged in)
@@ -304,7 +314,7 @@ function pageError() {
     window.open('https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp','popUpWindow',
         `width=${width},height=${height},left=${left},top=${top}`)
 
-    document.getElementById('summary_addAssign').remove()
+    document.getElementById('summary_tabs').remove()
     document.getElementById('error').hidden = false
     document.getElementById('login').onclick = () => {
         window.open('https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp', '_blank')
@@ -540,13 +550,7 @@ function fixNan(input, replacement) {
     return isNaN(input) ? replacement : input;
 }
 
-let tabBtns = document.getElementsByClassName('tablinks')
-for (let tab of tabBtns) {
-    tab.onclick = () => {
-        openTab(tab.id + 'Tab')
-    }
-}
-openTab('addAssignTab')
+// when tab button is clicked
 function openTab(tabName) {
     let i, tabcontent, tablinks;
     tabcontent = document.getElementsByClassName("tabcontent");
