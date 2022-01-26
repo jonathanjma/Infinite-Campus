@@ -1,7 +1,5 @@
 /*
 things to do:
-move trend graph to home or class page (also make it collapsible)
-
 show unread IC notifications for grade updates on home page
     (https://github.com/codingmarket07/Notification-Dropdown-Nov19)
     could also implement browser notifications by fetching every 5 min

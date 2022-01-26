@@ -284,17 +284,14 @@ function pageAction(json) {
                 let lowestPercent = fixNan(lowestScore / total.value * 100, 0).toFixed(2)
                 message = `To maintain a <b>${lowestGrade}%</b>, you must score ≥ ${lowestScore}/${total.value} <b>(${lowestPercent}%)</b>`
             } else {
-                message = `Even if you took a <b>0</b>, your grade still would be > <b>${lowestGrade}%</b>`
+                message = `Even if you got a <b>0</b>, your grade still would be > <b>${lowestGrade}%</b>`
             }
             output.innerHTML = message
         }
     }
 
-    // open graph button
-    document.getElementById('graph').onclick = () => {
-        // encode graph data in base64
-        window.open(`graph.html?n=${document.title}&data=${btoa(JSON.stringify(deepClone))}`, '_self')
-    }
+    // render graph
+    loadGraph(btoa(JSON.stringify(deepClone)));
 }
 
 // if error occurs during parsing/set up (most likely user not logged in)

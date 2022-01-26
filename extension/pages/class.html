@@ -89,14 +89,15 @@
             </thead>
             <tbody id="summary_T"></tbody>
         </table>
-        <button id="graph" style="padding: 10px 15px">Grade History Graph</button>
-        <br><br>
+        <br>
 
         <div class="tab">
             <button class="tablinks" id="addAssign">Add Assignment</button>
             <button class="tablinks" id="lowestGradeCalc">Lowest Grade Calculator</button>
+            <button class="tablinks" id="gradeGraph">Grade History Graph</button>
         </div>
 
+        <!-- Tab divs -->
         <div id="addAssignTab" class="tabcontent">
             <p></p>
             <div id="assignAdd">
@@ -128,6 +129,12 @@
             </div>
             <p id="lowestResult" style="font-size: 1.2em"></p>
         </div>
+
+        <div id="gradeGraphTab" class="tabcontent">
+            <p></p>
+            <canvas id="graph"></canvas>
+            <p></p>
+        </div>
         <br>
     </div>
 
@@ -138,5 +145,7 @@
     </div>
 
     <script src="class.js"></script>
+    <script src="../chart.js"></script>
+    <script src="graph.js"></script>
 </body>
 </html>
