@@ -2,7 +2,6 @@
 things to do:
 move trend graph to home or class page (also make it collapsible)
 
-lowest score to maintain certain grade % calculator (use water.css dialog element)
 show unread IC notifications for grade updates on home page
     (https://github.com/codingmarket07/Notification-Dropdown-Nov19)
     could also implement browser notifications by fetching every 5 min

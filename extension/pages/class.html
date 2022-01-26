@@ -6,6 +6,7 @@
     <title>Class</title>
     <link rel="stylesheet" href="../water.light.css">
     <style>
+        /*back button*/
         #header {
             display: flex;
             position: relative;
@@ -37,6 +38,34 @@
         #summary_T td:nth-of-type(5), #summary_T tr:last-child {
             font-weight: bold;
         }
+
+        /*tabs*/
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            border-radius: 6px 6px 0 0;
+        }
+        .tab button {
+            background-color: inherit;
+            float: left;
+            padding: 10px;
+            margin: 8px 8px 0;
+            border-radius: 6px 6px 0 0;
+        }
+
+        .tab button:hover {
+            background-color: #ddd;
+        }
+        .tab button.active {
+            background-color: #ccc;
+        }
+        .tabcontent {
+            display: none;
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            border-radius: 0 0 6px 6px;
+            border-top: none;
+        }
     </style>
 </head>
 <body style="padding-left: 10px">
@@ -61,39 +90,43 @@
             <tbody id="summary_T"></tbody>
         </table>
         <button id="graph" style="padding: 10px 15px">Grade History Graph</button>
-        <br>
+        <br><br>
 
-        <details>
-            <summary>Lowest Score Calculator</summary>
-            <p>(uses original grades)</p>
+        <div class="tab">
+            <button class="tablinks" id="addAssign">Add Assignment</button>
+            <button class="tablinks" id="lowestGradeCalc">Lowest Grade Calculator</button>
+        </div>
+
+        <div id="addAssignTab" class="tabcontent">
+            <p></p>
+            <div id="assignAdd">
+                <select id="catDropdown">
+                    <option>Choose a Category</option>
+                </select>
+                <p>&nbsp;</p>
+                <input type="text" id="assignName" placeholder="Assignment Name">
+                <p>&nbsp;</p>
+                <input type="number" id="assignScore" placeholder="Points Earned" min="0" style="width: 90px">
+                <p>&nbsp;</p>
+                <input type="number" id="assignTotal" placeholder="Total Points" min="0" style="width: 90px">
+                <p>&nbsp;</p>
+                <button id="assignSubmit">Submit</button>
+            </div>
+        </div>
+
+        <div id="lowestGradeCalcTab" class="tabcontent">
+            <p></p>
             <div id="lowestCalc">
                 <select id="catDropdown2">
                     <option>Choose a Category</option>
                 </select>
                 <p>&nbsp;</p>
-                <input type="number" id="lowestTotal" placeholder="Total Points" min="0" style="width: 90px">
+                <input type="number" id="lowestTotal" placeholder="Out of how many points?" min="0" style="width: 150px">
                 <p>&nbsp;</p>
                 <input type="number" id="lowestGrade" placeholder="Lowest Grade" min="0" style="width: 90px">
-                <p>% &nbsp;</p>
-                <button id="lowestSubmit">Submit</button>
-                <p>&nbsp;</p>
+                <p>%</p>
             </div>
-            <p id="lowestResult" style="font-size: 1.2em; padding-top: 10px"></p>
-        </details>
-
-        <h2>Add Assignment</h2>
-        <div id="assignAdd">
-            <select id="catDropdown">
-                <option>Choose a Category</option>
-            </select>
-            <p>&nbsp;</p>
-            <input type="text" id="assignName" placeholder="Assignment Name">
-            <p>&nbsp;</p>
-            <input type="number" id="assignScore" placeholder="Points Earned" min="0" style="width: 90px">
-            <p>&nbsp;</p>
-            <input type="number" id="assignTotal" placeholder="Total Points" min="0" style="width: 90px">
-            <p>&nbsp;</p>
-            <button id="assignSubmit">Submit</button>
+            <p id="lowestResult" style="font-size: 1.2em"></p>
         </div>
         <br>
     </div>

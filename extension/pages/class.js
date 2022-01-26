@@ -2,6 +2,7 @@
 
 let gpSelected = 1 // default semester (will be overwritten by url parameter if it exists)
 let gpConfig = [['Q1', 'Q2'], ['Q3', 'Q4']] // define semesters (group combined grading periods)
+let gpIncluded = gpConfig[gpSelected - 1];
 
 // back to home page button
 document.getElementById('back').onclick = () => {
@@ -25,7 +26,7 @@ document.title = className
 gpSelected = parseInt(regex_result[3])
 
 // select correct grading period group depending on semester
-let gpIncluded = gpConfig[gpSelected - 1];
+gpIncluded = gpConfig[gpSelected - 1];
 console.log('grading periods: ' + gpIncluded)
 
 // get class page json data from background.js
@@ -242,12 +243,16 @@ function pageAction(json) {
         }
     }
 
-    // when user submits lowest grade info
-        let total = document.getElementById('lowestTotal')
-        let grade = document.getElementById('lowestGrade')
+    // when user uses lowest grade calculator
+    let total = document.getElementById('lowestTotal')
+    let grade = document.getElementById('lowestGrade')
+    catDropdownL.oninput = lowestGradeCalc
+    total.oninput = lowestGradeCalc
+    grade.oninput = lowestGradeCalc
+
+    function lowestGradeCalc() {
         let output = document.getElementById('lowestResult')
-        catDropdownL.selectedIndex = 1; total.value = 50; grade.value = 90
-    document.getElementById('lowestSubmit').onclick = () => {
+
         let lowestScore;
         let lowestGrade = parseFloat(grade.value)
         if (catDropdownL.selectedIndex !== 0 && total.value.length > 0 && grade.value.length > 0
@@ -536,4 +541,25 @@ function getDiffColor(num) {
 // if number is NaN, replace it with specified string
 function fixNan(input, replacement) {
     return isNaN(input) ? replacement : input;
+}
+
+let tabBtns = document.getElementsByClassName('tablinks')
+for (let tab of tabBtns) {
+    tab.onclick = () => {
+        openTab(tab.id + 'Tab')
+    }
+}
+openTab('addAssignTab')
+function openTab(tabName) {
+    let i, tabcontent, tablinks;
+    tabcontent = document.getElementsByClassName("tabcontent");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
+    tablinks = document.getElementsByClassName("tablinks");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+    document.getElementById(tabName).style.display = "block";
+    document.getElementById(tabName.substring(0, tabName.length-3)).className += " active";
 }
