@@ -319,6 +319,7 @@ function pageError() {
     document.getElementById('login').onclick = () => {
         window.open('https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp', '_blank')
     }
+    document.getElementById('refresh').onclick = () => location.reload()
 }
 
 // add assignment
@@ -399,13 +400,16 @@ function refreshCategory(categoryName) {
     catRow.children.item(3).innerHTML = category['Total'].toFixed(2)
     catRow.children.item(4).innerHTML =
         fixNan(category['Score'] / category['Total'] * 100, 0).toFixed(2) + '%'
-    // ^ NaN will be shown if both score and total is 0, so replace it with 0
+    // ^ NaN will be shown if both score and total pts is 0, so replace it with 0
 
     let catPercentDiff = (category['Score'] / category['Total'] - category['Original Score'] / category['Original Total']) * 100
-    if (isNaN(catPercentDiff)) { // score and total will be 0 -> NaN if all assignments removed
+    // fix NaN if all assignments removed
+    if (isNaN(category['Score'] / category['Total']))
         catPercentDiff = -(category['Original Score'] / category['Original Total']) * 100
-    }
-    catRow.children.item(5).innerHTML = catPercentDiff.toFixed(2) + '%'
+    // fix NaN if no original assignments
+    else if (isNaN(category['Original Score'] / category['Original Total']))
+        catPercentDiff = (category['Score'] / category['Total']) * 100
+    catRow.children.item(5).innerHTML = fixNan(catPercentDiff, 0).toFixed(2) + '%'
     catRow.children.item(5).style.color = getDiffColor(catPercentDiff.toFixed(2)) // green if +, red -, black 0
 
     // recalculate current grade
@@ -414,10 +418,9 @@ function refreshCategory(categoryName) {
     gradeSumRow.children.item(4).innerHTML = fixNan(gradeData[0] * 100, 0).toFixed(2) + '%'
 
     let gradePercentDiff = (gradeData[1] / gradeData[2] - gradeOriginalNumer / gradeOriginalDenom) * 100
-    if (isNaN(gradePercentDiff)) {
-        gradePercentDiff = -(gradeOriginalNumer / gradeOriginalDenom) * 100
-    }
-    gradeSumRow.children.item(5).innerHTML = gradePercentDiff.toFixed(2) + '%'
+    if (isNaN(gradeData[1] / gradeData[2])) gradePercentDiff = -(gradeOriginalNumer / gradeOriginalDenom) * 100
+    else if (isNaN(gradeOriginalNumer / gradeOriginalDenom)) gradePercentDiff = (gradeData[1] / gradeData[2]) * 100
+    gradeSumRow.children.item(5).innerHTML = fixNan(gradePercentDiff, 0).toFixed(2) + '%'
     gradeSumRow.children.item(5).style.color = getDiffColor(gradePercentDiff.toFixed(2))
 }
 

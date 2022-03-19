@@ -3,9 +3,15 @@ things to do:
 show unread IC notifications for grade updates on home page
     (https://github.com/codingmarket07/Notification-Dropdown-Nov19)
     could also implement browser notifications by fetching every 5 min
+add categories for weight-based grades
+change category weight
 
 about/help page
 'settings' page for non-fusd?
+
+dark mode (need to adjust water.css styles, https://codepen.io/ruchern-chong/pen/OgJqvr for chart.js adjustments)
+android app for moo?
+    (https://medium.com/@Chhekur/how-to-build-android-apps-with-node-js-using-android-js-2aa4643be87b)
 
 note: 1216 x 760 for web store screenshots
  */
@@ -68,6 +74,7 @@ function pageError() {
     document.getElementById('login').onclick = () => {
         window.open('https://fremontunifiedca.infinitecampus.org/campus/portal/students/fremont.jsp', '_blank')
     }
+    document.getElementById('refresh').onclick = () => location.reload()
 }
 
 // populate course table based on semester
