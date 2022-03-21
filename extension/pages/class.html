@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Class</title>
-    <link rel="stylesheet" href="../water.light.css">
+    <link rel="stylesheet" href="../water.auto.css">
+
     <style>
         /*back button*/
         #header {
@@ -40,9 +41,22 @@
         }
 
         /*tabs*/
+        :root {
+            --tBorder: #ccc;
+            --tHover: #ddd;
+            --tButton: #ccc;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --tBorder: #c0c0c0;
+                --tHover: #505050;
+                --tButton: #404040;
+            }
+        }
+
         .tab {
             overflow: hidden;
-            border: 1px solid #ccc;
+            border: 1px solid var(--tBorder);
             border-radius: 6px 6px 0 0;
         }
         .tab button {
@@ -52,17 +66,16 @@
             margin: 8px 8px 0;
             border-radius: 6px 6px 0 0;
         }
-
         .tab button:hover {
-            background-color: #ddd;
+            background-color: var(--tHover);
         }
         .tab button.active {
-            background-color: #ccc;
+            background-color: var(--tButton);
         }
         .tabcontent {
             display: none;
             padding: 6px 12px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--tBorder);
             border-radius: 0 0 6px 6px;
             border-top: none;
         }

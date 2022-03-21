@@ -31,20 +31,20 @@
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --background-body: #202b38;
-        --background: #161f27;
-        --background-alt: #1a242f;
+        --background-body: #202124;
+        --background: #161513;
+        --background-alt: #1a1a1b;
         --selection: #1c76c5;
         --text-main: #dbdbdb;
         --text-bright: #fff;
         --text-muted: #a9b1ba;
         --links: #41adff;
         --focus: #0096bfab;
-        --border: #526980;
+        --border: #737373;
         --code: #ffbe85;
         --animation-duration: 0.1s;
-        --button-base: #0c151c;
-        --button-hover: #040a0f;
+        --button-base: #404040;
+        --button-hover: #646464;
         --scrollbar-thumb: var(--button-hover);
         --scrollbar-thumb-hover: rgb(0, 0, 0);
         --form-placeholder: #a9a9a9;

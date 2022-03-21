@@ -45,6 +45,8 @@ function loadGraph(graphData) {
     console.log('grade history:')
     console.log(consoleOut)*/
 
+    let darkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
     // create graph using chart.js
     let ctx = document.getElementById('graph')
     // used to show different colors when grade increases/decreases
@@ -52,7 +54,8 @@ function loadGraph(graphData) {
     // show unpublished assignments with dotted line
     let dotted = (ctx, value) => graphLabels[ctx.p0DataIndex] === 'Unpublished Assignments' || graphLabels[ctx.p1DataIndex] === 'Unpublished Assignments' ? value : undefined
 
-    Chart.defaults.color = 'rgb(0, 0, 0)'
+    Chart.defaults.color = darkMode ? 'rgb(245,245,245)' : 'rgb(0,0,0)'
+    Chart.defaults.borderColor = darkMode ? 'rgb(60,60,60)' : 'rgb(0,0,0,0.1)'
     let chart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -62,7 +65,7 @@ function loadGraph(graphData) {
                 data: gradeHistory,
                 borderColor: 'rgb(75, 192, 192)',
                 segment: {
-                    borderColor: ctx => dotted(ctx, 'rgb(0,0,0,0.2)') || down(ctx, 'rgb(192,75,75)'),
+                    borderColor: ctx => dotted(ctx, darkMode ? 'rgb(120,120,120)' : 'rgb(0,0,0,0.4)') || down(ctx, 'rgb(192,75,75)'),
                     borderDash: ctx => dotted(ctx, [6, 6]),
                 },
                 tension: 0.1

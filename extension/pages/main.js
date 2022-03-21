@@ -9,7 +9,6 @@ change category weight
 about/help page
 'settings' page for non-fusd?
 
-dark mode (need to adjust water.css styles, https://codepen.io/ruchern-chong/pen/OgJqvr for chart.js adjustments)
 android app for moo?
     (https://medium.com/@Chhekur/how-to-build-android-apps-with-node-js-using-android-js-2aa4643be87b)
 
