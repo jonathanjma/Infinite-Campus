@@ -33,7 +33,7 @@
             font-size: 1.5em;
             font-weight: bold;
         }
-        #assignAdd *, #lowestCalc *{
+        #assignAdd *, #catAdd *, #lowestCalc * {
             display: inline;
         }
         #summary_T td:nth-of-type(5), #summary_T tr:last-child {
@@ -106,8 +106,9 @@
 
         <div class="tab">
             <button class="tablinks" id="addAssign">Add Assignment</button>
-            <button class="tablinks" id="lowestGradeCalc">Lowest Grade Calculator</button>
-            <button class="tablinks" id="gradeGraph">Grade History Graph</button>
+            <button class="tablinks" id="addCat">Add Category</button>
+            <button class="tablinks" id="lowestGradeCalc" title="(uses original grade data)">Lowest Grade Calculator</button>
+            <button class="tablinks" id="gradeGraph" title="(uses original grade data)">Grade History Graph</button>
         </div>
 
         <!-- Tab divs -->
@@ -125,6 +126,17 @@
                 <input type="number" id="assignTotal" placeholder="Total Points" min="0" style="width: 90px">
                 <p>&nbsp;</p>
                 <button id="assignSubmit">Submit</button>
+            </div>
+        </div>
+
+        <div id="addCatTab" class="tabcontent">
+            <p></p>
+            <div id="catAdd">
+                <input type="text" id="catName" placeholder="Category Name">
+                <p>&nbsp;</p>
+                <input type="number" id="catWeight" placeholder="Category Weight" min="0">
+                <p>%&nbsp;</p>
+                <button id="catSubmit" disabled>Submit</button>
             </div>
         </div>
 
