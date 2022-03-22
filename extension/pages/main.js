@@ -3,8 +3,6 @@ things to do:
 show unread IC notifications for grade updates on home page
     (https://github.com/codingmarket07/Notification-Dropdown-Nov19)
     could also implement browser notifications by fetching every 5 min
-add categories for weight-based grades
-change category weight
 
 about/help page
 'settings' page for non-fusd?
