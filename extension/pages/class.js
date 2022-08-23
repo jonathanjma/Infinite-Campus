@@ -1,7 +1,7 @@
 // class page: grade summary, assignments sorted by categories, grade simulation, lowest grade calculator, grade trend graph
 
 let gpConfig = [['Q1', 'Q2'], ['Q3', 'Q4']] // define semesters (group combined grading periods)
-let gpSelected = 2 // default semester (will be overwritten by url parameter if it exists)
+let gpSelected = 1 // default semester (will be overwritten by url parameter if it exists)
 let gpIncluded = gpConfig[gpSelected - 1];
 
 // back to home page button
@@ -591,6 +591,7 @@ function createCatTableUpdateSummary(catName, categoryData, pointsBased, userAdd
         catSumRow.children.item(1).appendChild(p)
     } else { // don't show weightage editor if grade is points based
         catSumRow.insertCell(1).innerHTML = '-%'
+        catSumRow.children.item(1).title = '(weightage editor is disabled since grade is points based)'
     }
     catSumRow.insertCell(2).innerHTML = categoryData['Score'].toFixed(2)
     catSumRow.insertCell(3).innerHTML = categoryData['Total'].toFixed(2)

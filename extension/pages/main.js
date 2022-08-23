@@ -1,14 +1,8 @@
 /*
 things to do:
-show unread IC notifications for grade updates on home page
-    (https://github.com/codingmarket07/Notification-Dropdown-Nov19)
+show unread IC notifications for grade updates on home page: https://github.com/codingmarket07/Notification-Dropdown-Nov19
     could also implement browser notifications by fetching every 5 min
-
 about/help page
-'settings' page for non-fusd?
-
-android app for moo?
-    (https://medium.com/@Chhekur/how-to-build-android-apps-with-node-js-using-android-js-2aa4643be87b)
 
 note: 1216 x 760 for web store screenshots
  */
@@ -16,37 +10,58 @@ note: 1216 x 760 for web store screenshots
 // home page: shows course table with links to course pages
 
 let gradingPeriods = 2 // # semesters
-let gpSelected = 2 // default semester
+let gpSelected = 1 // default semester
 
-// when radio buttons clicked, update course table when semester changed
-document.getElementById('sem1').onclick = () => {
-    if (gpSelected !== 1) {
-        gpSelected = 1
-        createHomeTable()
-    }
-}
-document.getElementById('sem2').onclick = () => {
-    if (gpSelected !== 2) {
-        gpSelected = 2
-        createHomeTable()
-    }
+// button to update default semester
+let defaultBtn = document.getElementById('gpDefault')
+defaultBtn.onclick = () => {
+    console.log(gpSelected)
+    defaultGp = gpSelected
+    defaultBtn.disabled = true
+    chrome.storage.local.set({'gpDefault': gpSelected})
 }
 
 let gradingPeriodsJson // json with all semesters
+let defaultGp // default semester for home page
+
 // get home page json data from background.js
 chrome.runtime.sendMessage({message: 'home_data'}, (json) => {
-    try {
-        pageAction(json)
-    } catch (error) {
-        console.log(error);
-        console.log('json response:')
-        console.log(json)
-        pageError()
-    }
+
+    // get default semester
+    chrome.storage.local.get(['gpDefault'], (data) => {
+        try {
+            defaultGp = data.gpDefault
+            gpSelected = defaultGp
+            console.log(defaultGp)
+            pageAction(json)
+        } catch (error) {
+            console.log(error);
+            console.log('json response:')
+            console.log(json)
+            pageError()
+        }
+    })
 })
 
 // set up courses table
 function pageAction(json) {
+    // when radio buttons clicked, update course table when semester changed
+    // enable/disable default changer button depending on semester selected
+    document.getElementById('sem1').onclick = () => {
+        if (gpSelected !== 1) {
+            gpSelected = 1
+            defaultBtn.disabled = defaultGp === gpSelected
+            createHomeTable()
+        }
+    }
+    document.getElementById('sem2').onclick = () => {
+        if (gpSelected !== 2) {
+            gpSelected = 2
+            defaultBtn.disabled = defaultGp === gpSelected
+            createHomeTable()
+        }
+    }
+
     // mark semester input depending on default value
     document.getElementById('sem1').checked = gpSelected === 1
     document.getElementById('sem2').checked = gpSelected !== 1
@@ -96,6 +111,7 @@ function createHomeTable() {
             if (grade['taskName'] === 'Semester Final') {
                 courseRow.insertCell(2).innerHTML =
                     (grade['progressPercent'] !== undefined ? grade['progressPercent'] : '-') + '%'
+                // percent is quarter end snapshot, progressPercent is now snapshot
                 courseRow.insertCell(3).innerHTML =
                     grade['progressScore'] !== undefined ? grade['progressScore'] : '-'
                 break

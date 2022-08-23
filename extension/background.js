@@ -1,5 +1,11 @@
 // background page: performs web requests from extension pages
 
+chrome.runtime.onInstalled.addListener((details) => {
+    chrome.storage.local.get(['gpDefault'], (data) => {
+        if (data.gpDefault === undefined) chrome.storage.local.set({'gpDefault': 1})
+    })
+})
+
 // make IC web requests when requested by extension pages (this approach avoids CORS problems)
 chrome.runtime.onMessage.addListener(
     (request, sender, sendResponse) => {
@@ -23,4 +29,5 @@ chrome.runtime.onMessage.addListener(
             }).catch(error => sendResponse(error))
         }
         return true // required since sendResponse is called ansyc
-    })
+    }
+)

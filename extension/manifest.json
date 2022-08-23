@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Infinite Campus Grades++",
   "description": "Alternative Version of FUSD Infinite Campus (with grade simulation)",
-  "version": "2.4",
+  "version": "2.5",
   "browser_action": {
     "default_popup": "popup/popup.html",
     "default_icon": "icon.png"
@@ -17,7 +17,8 @@
     "scripts": ["background.js"]
   },
   "permissions": [
-    "https://fremontunifiedca.infinitecampus.org/*"
+    "https://fremontunifiedca.infinitecampus.org/*",
+    "storage"
   ],
   "web_accessible_resources": [
     "pages/main.html",
