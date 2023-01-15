@@ -1,4 +1,8 @@
 # Infinite Campus Grades++
+
+![Chrome Web Store](https://img.shields.io/chrome-web-store/users/kfanojpgbklafmhammpnbajkkdpehign?style=plastic)
+![Chrome Web Store](https://img.shields.io/chrome-web-store/rating/kfanojpgbklafmhammpnbajkkdpehign)
+
 A Chrome extension available on the [Chrome Web Store](https://chrome.google.com/webstore/detail/infinite-campus-grades%20%20/kfanojpgbklafmhammpnbajkkdpehign)!
 
 Tired of the confusing Infinite Campus grades UI and having to manually calculate the lowest grade you can get on an assignment?
