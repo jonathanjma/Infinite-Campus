@@ -491,7 +491,7 @@ function createAssignmentRow(assignmentData, categoryTable, categoryTitle, userA
 
     // allow user to reset original assignments to original score/total points
     let resetButton = document.createElement('button')
-    resetButton.innerHTML = '⭯'
+    resetButton.innerHTML = '\u21BA'
     resetButton.disabled = userAdded
     let score_original = assignmentData['Score']
     let total_original = assignmentData['Total']

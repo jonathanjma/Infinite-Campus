@@ -15,7 +15,7 @@ let gpSelected = 1 // default semester
 // button to update default semester
 let defaultBtn = document.getElementById('gpDefault')
 defaultBtn.onclick = () => {
-    console.log(gpSelected)
+    // console.log(gpSelected)
     defaultGp = gpSelected
     defaultBtn.disabled = true
     chrome.storage.local.set({'gpDefault': gpSelected})
@@ -29,6 +29,7 @@ chrome.runtime.sendMessage({message: 'home_data'}, (json) => {
 
     // get default semester
     chrome.storage.local.get(['gpDefault'], (data) => {
+        document.getElementById('loading').hidden = true
         try {
             defaultGp = data.gpDefault
             gpSelected = defaultGp
@@ -36,8 +37,8 @@ chrome.runtime.sendMessage({message: 'home_data'}, (json) => {
             pageAction(json)
         } catch (error) {
             console.log(error);
-            console.log('json response:')
-            console.log(json)
+            // console.log('json response:')
+            // console.log(json)
             pageError()
         }
     })

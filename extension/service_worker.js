@@ -1,4 +1,4 @@
-// background page: performs web requests from extension pages
+// service worker: performs web requests from extension pages
 
 chrome.runtime.onInstalled.addListener((details) => {
     chrome.storage.local.get(['gpDefault'], (data) => {

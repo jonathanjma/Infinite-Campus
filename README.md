@@ -1,6 +1,6 @@
 # Infinite Campus Grades++
 
-![Chrome Web Store](https://img.shields.io/chrome-web-store/users/kfanojpgbklafmhammpnbajkkdpehign?style=plastic)
+![Chrome Web Store](https://img.shields.io/chrome-web-store/users/kfanojpgbklafmhammpnbajkkdpehign)
 ![Chrome Web Store](https://img.shields.io/chrome-web-store/rating/kfanojpgbklafmhammpnbajkkdpehign)
 
 A Chrome extension available on the [Chrome Web Store](https://chrome.google.com/webstore/detail/infinite-campus-grades%20%20/kfanojpgbklafmhammpnbajkkdpehign)!
@@ -27,7 +27,7 @@ Usage:
    - Create new assignments and categories
    - Update assignment scores using the input boxes next to each assignment
    - Delete assignments using the "x" button
-   - Reset assignments to their original score using the "⭯" button
+   - Reset assignments to their original score using the "&#8634;" button
    - Update category weightages using the input boxes in the summary table
 6. The "Lowest Grade Calculator" tab allows you to calculate the lowest grade you can get on an assignment in order to maintain a certain grade
 7. The "Grade History Graph" tab shows a graph of how your grade has changed during the semester
@@ -37,7 +37,7 @@ Open Source libraries used: Chart.js and Water.css
 
 Note: Calculated grades may be off by at most 0.01% due to rounding errors
 
-For any bugs or feature requests, do not hesitate to email appdev.micro@gmail.com or open an issue on GitHub with a detailed description of the issue/feature.
+To report any bugs, email appdev.micro@gmail.com or open an issue on GitHub with a detailed description of the issue.
 
 ### Images 
 ![](imgs/home_page.png)
